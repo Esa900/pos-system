@@ -67,6 +67,7 @@ export const POSView: React.FC<Props> = ({
   const [modalCustomProductName, setModalCustomProductName] = useState('');
   const [modalQty, setModalQty] = useState<number>(1);
   const [modalTotalTaka, setModalTotalTaka] = useState<number>(0);
+  const [modalDiscount, setModalDiscount] = useState<number>(0);
   const [modalCustomerName, setModalCustomerName] = useState('খুচরা গ্রাহক');
   const [modalCustomerPhone, setModalCustomerPhone] = useState('');
   const [modalPaymentMethod, setModalPaymentMethod] = useState<PaymentMethod>('নগদ');
@@ -202,11 +203,14 @@ export const POSView: React.FC<Props> = ({
     
     // Set total taka based on active selection or bill
     if (cart.length > 0) {
-      setModalTotalTaka(payableAmount);
+      setModalTotalTaka(cartTotalBill);
+      setModalDiscount(discountAmount);
     } else if (activeProd) {
       setModalTotalTaka((lineQty > 0 ? lineQty : 1) * linePrice);
+      setModalDiscount(discountAmount);
     } else {
       setModalTotalTaka(0);
+      setModalDiscount(0);
     }
 
     setModalCustomerName(customerName.trim() || 'খুচরা গ্রাহক');
@@ -284,8 +288,9 @@ export const POSView: React.FC<Props> = ({
     const minutes = now.getMinutes();
     const timeFormatted = `${pad(hours > 12 ? hours - 12 : hours || 12)}:${pad(minutes)} ${hours >= 12 ? 'PM' : 'AM'}`;
 
+    const finalPayable = Math.max(0, modalTotalTaka - modalDiscount);
     const totalCost = resolvedBuyingPrice * modalQty;
-    const calculatedProfit = modalTotalTaka - totalCost;
+    const calculatedProfit = finalPayable - totalCost;
 
     const soldItem: CartItem = {
       id: `cart-${Date.now()}`,
@@ -312,11 +317,11 @@ export const POSView: React.FC<Props> = ({
       totalQty: modalQty,
       subtotal: modalTotalTaka,
       discountType: 'flat',
-      discountValue: 0,
-      discountAmount: 0,
-      netPayable: modalTotalTaka,
-      paidAmount: modalPaymentMethod === 'বাকি' ? 0 : modalTotalTaka,
-      dueAmount: modalPaymentMethod === 'বাকি' ? modalTotalTaka : 0,
+      discountValue: modalDiscount,
+      discountAmount: modalDiscount,
+      netPayable: finalPayable,
+      paidAmount: modalPaymentMethod === 'বাকি' ? 0 : finalPayable,
+      dueAmount: modalPaymentMethod === 'বাকি' ? finalPayable : 0,
       paymentMethod: modalPaymentMethod,
       totalCost,
       profit: calculatedProfit,
@@ -808,7 +813,7 @@ export const POSView: React.FC<Props> = ({
                 </select>
               </div>
 
-              {/* Field 2 & 3: কত পিস (পরিমাণ) & কত টাকা (মোট টাকা) */}
+              {/* Field 2 & 3: কত পিস (পরিমাণ) & কত টাকা (মোট বিল) */}
               <div className="grid grid-cols-2 gap-3">
                 <div>
                   <label className="text-xs font-semibold text-slate-700 block mb-1">
@@ -820,7 +825,7 @@ export const POSView: React.FC<Props> = ({
                     required
                     value={modalQty}
                     onChange={(e) => handleModalQtyChange(parseInt(e.target.value, 10) || 1)}
-                    className="w-full px-3 py-2 text-xs font-mono font-bold text-center border border-slate-300 rounded-lg focus:border-[#00875a] focus:outline-hidden text-slate-900"
+                    className="w-full px-3 py-2 text-xs font-mono font-bold text-center border border-slate-300 rounded-lg focus:border-[#00875a] focus:outline-hidden text-slate-900 bg-white"
                   />
                 </div>
 
@@ -836,8 +841,38 @@ export const POSView: React.FC<Props> = ({
                       required
                       value={modalTotalTaka}
                       onChange={(e) => setModalTotalTaka(parseFloat(e.target.value) || 0)}
-                      className="w-full pl-7 pr-3 py-2 text-xs font-mono font-bold text-right border border-slate-300 rounded-lg focus:border-[#00875a] focus:outline-hidden text-emerald-800 bg-emerald-50/40"
+                      className="w-full pl-7 pr-3 py-2 text-xs font-mono font-bold text-right border border-slate-300 rounded-lg focus:border-[#00875a] focus:outline-hidden text-slate-900 bg-slate-50/60"
                     />
+                  </div>
+                </div>
+              </div>
+
+              {/* Field: ডিসকাউন্ট (টাকা) ও পরিশোধযোগ্য টাকা (Exact requested discount system) */}
+              <div className="grid grid-cols-2 gap-3 p-3 bg-emerald-50/70 rounded-xl border border-emerald-200/90">
+                <div>
+                  <label className="text-xs font-semibold text-slate-700 block mb-1">
+                    ডিসকাউন্ট (টাকা)
+                  </label>
+                  <div className="relative">
+                    <span className="absolute left-3 top-1/2 -translate-y-1/2 text-xs text-slate-400 font-bold">৳</span>
+                    <input
+                      type="number"
+                      min="0"
+                      placeholder="0"
+                      value={modalDiscount || ''}
+                      onChange={(e) => setModalDiscount(parseFloat(e.target.value) || 0)}
+                      className="w-full pl-7 pr-3 py-2 text-xs font-mono font-bold text-right border border-slate-300 rounded-lg focus:border-[#00875a] focus:outline-hidden bg-white text-slate-900 shadow-2xs"
+                    />
+                  </div>
+                </div>
+
+                <div>
+                  <label className="text-xs font-semibold text-emerald-900 block mb-1">
+                    পরিশোধযোগ্য টাকা
+                  </label>
+                  <div className="w-full py-2 px-3 bg-white border border-emerald-300 rounded-lg text-xs font-bold font-mono text-emerald-900 text-right shadow-2xs flex items-center justify-between">
+                    <span className="text-[10px] text-emerald-700 font-sans font-medium">নিট বিল:</span>
+                    <span className="text-sm">৳ {Math.max(0, modalTotalTaka - modalDiscount).toFixed(2)}</span>
                   </div>
                 </div>
               </div>

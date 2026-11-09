@@ -132,10 +132,16 @@ export const ThermalReceiptModal: React.FC<Props> = ({ invoice, onClose }) => {
           {/* Clean Total Bill - NO "পরিশোধিত টাকা: ৳ ১০ / বকেয়া বাকি: ৳ ০" lines as requested in screenshot 3 */}
           <div className="border-t border-slate-300 pt-2 space-y-1.5 text-[11px]">
             {invoice.discountAmount > 0 && (
-              <div className="flex justify-between text-emerald-700">
-                <span>ছাড় / ডিসকাউন্ট:</span>
-                <span className="font-mono font-medium">- ৳ {invoice.discountAmount.toFixed(2)}</span>
-              </div>
+              <>
+                <div className="flex justify-between text-slate-600">
+                  <span>মোট বিল:</span>
+                  <span className="font-mono font-medium">৳ {invoice.subtotal.toFixed(2)}</span>
+                </div>
+                <div className="flex justify-between text-emerald-700 font-semibold">
+                  <span>ছাড় / ডিসকাউন্ট:</span>
+                  <span className="font-mono">- ৳ {invoice.discountAmount.toFixed(2)}</span>
+                </div>
+              </>
             )}
 
             <div className="flex justify-between text-sm font-bold text-slate-900 border-t border-dashed border-slate-300 pt-1.5">
