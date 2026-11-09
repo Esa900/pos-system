@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useEffect } from 'react';
 import { SaleInvoice } from '../types';
 import { formatBDT, toBanglaNumber, generateBarcodeBars } from '../utils/bengaliUtils';
 import { Printer, X, CheckCircle, ShoppingBag } from 'lucide-react';
@@ -10,6 +10,18 @@ interface Props {
 
 export const ThermalReceiptModal: React.FC<Props> = ({ invoice, onClose }) => {
   if (!invoice) return null;
+
+  useEffect(() => {
+    // 1-Click memo auto-print
+    const timer = setTimeout(() => {
+      try {
+        window.print();
+      } catch (e) {
+        console.error('Print trigger:', e);
+      }
+    }, 350);
+    return () => clearTimeout(timer);
+  }, [invoice?.id]);
 
   const handlePrint = () => {
     window.print();

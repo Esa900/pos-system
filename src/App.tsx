@@ -391,6 +391,7 @@ export default function App() {
               onCompleteSale={handleCompleteSale}
               soundEnabled={soundEnabled}
               onOpenInventory={() => setActiveTab('products')}
+              onAddProduct={handleAddProduct}
             />
           )}
 

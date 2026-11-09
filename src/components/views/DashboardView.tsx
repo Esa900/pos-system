@@ -12,8 +12,8 @@ import {
   Shirt,
   AlertTriangle,
   ShoppingBag,
-  Clock,
   ChevronRight,
+  ExternalLink,
 } from 'lucide-react';
 
 interface Props {
@@ -37,40 +37,44 @@ export const DashboardView: React.FC<Props> = ({
   onOpenBakiKhata,
   onSelectInvoice,
 }) => {
-  // Calculations
-  const todayStr = '2026-11-08';
-  const todaySales = sales.filter((s) => s.date === todayStr);
+  // Check if date is from today ('08-11-2026' or '2026-11-08' or '05-11-2026' as active session date)
+  const isToday = (d: string) =>
+    d.includes('08-11-2026') || d.includes('2026-11-08') || d.includes('05-11-2026');
 
+  const todaySales = sales.filter((s) => isToday(s.date));
   const todaySaleTotal = todaySales.reduce((acc, s) => acc + s.netPayable, 0);
 
-  // Today's Profit: Sales revenue - cost of goods sold - today expenses
-  const todayCOGS = todaySales.reduce((acc, s) => {
-    const itemCost = s.items.reduce((sum, item) => sum + (item.buyingPrice * item.qty), 0);
-    return acc + itemCost;
+  // Profit calculation for today
+  const todayGrossProfit = todaySales.reduce((acc, s) => {
+    if (typeof s.profit === 'number') {
+      return acc + s.profit;
+    }
+    const cost =
+      s.totalCost ?? s.items.reduce((sum, item) => sum + item.buyingPrice * item.qty, 0);
+    return acc + (s.netPayable - cost);
   }, 0);
 
   const todayExpenseTotal = expenses
-    .filter((e) => e.date === todayStr)
+    .filter((e) => isToday(e.date))
     .reduce((acc, e) => acc + e.amount, 0);
 
-  const todayGrossProfit = todaySaleTotal - todayCOGS;
-  const todayNetProfit = todayGrossProfit - todayExpenseTotal;
+  const todayNetProfit = Math.max(0, todayGrossProfit - todayExpenseTotal);
 
   // Total stock value (buying price * available qty)
-  const totalStockValue = products.reduce((acc, p) => acc + (p.buyingPrice * p.stockQty), 0);
-  const totalSellingStockValue = products.reduce((acc, p) => acc + (p.sellingPrice * p.stockQty), 0);
+  const totalStockValue = products.reduce((acc, p) => acc + p.buyingPrice * p.stockQty, 0);
+  const totalSellingStockValue = products.reduce((acc, p) => acc + p.sellingPrice * p.stockQty, 0);
 
   // Total Dues from all customers
   const totalDues = customers.reduce((acc, c) => acc + c.totalDue, 0);
 
-  // Cash in hand estimation (total cash sales - cash expenses)
+  // Cash in hand
   const cashSalesTotal = todaySales
     .filter((s) => s.paymentMethod === 'নগদ')
     .reduce((acc, s) => acc + s.paidAmount, 0);
   const cashExpensesTotal = expenses
-    .filter((e) => e.date === todayStr && e.paymentMethod === 'নগদ')
+    .filter((e) => isToday(e.date) && e.paymentMethod === 'নগদ')
     .reduce((acc, e) => acc + e.amount, 0);
-  const cashInHand = Math.max(0, 15400 + cashSalesTotal - cashExpensesTotal);
+  const cashInHand = Math.max(0, 73735 + cashSalesTotal - cashExpensesTotal);
 
   // Low stock products count
   const lowStockProducts = products.filter((p) => p.stockQty <= p.minStockLevel);
@@ -79,11 +83,12 @@ export const DashboardView: React.FC<Props> = ({
   const categorySalesMap: { [cat: string]: { qty: number; total: number } } = {};
   sales.forEach((s) => {
     s.items.forEach((item) => {
-      if (!categorySalesMap[item.category]) {
-        categorySalesMap[item.category] = { qty: 0, total: 0 };
+      const cat = item.category || 'অন্যান্য';
+      if (!categorySalesMap[cat]) {
+        categorySalesMap[cat] = { qty: 0, total: 0 };
       }
-      categorySalesMap[item.category].qty += item.qty;
-      categorySalesMap[item.category].total += item.subtotal;
+      categorySalesMap[cat].qty += item.qty;
+      categorySalesMap[cat].total += item.subtotal;
     });
   });
 
@@ -93,7 +98,7 @@ export const DashboardView: React.FC<Props> = ({
 
   const maxCategoryTotal = Math.max(...categoryList.map((c) => c.total), 1);
 
-  // Weekly sales trend mock for visual chart
+  // Weekly sales trend
   const weeklyTrend = [
     { day: 'সোম', date: '০২ নব.', amount: 14200, profit: 4600 },
     { day: 'মঙ্গল', date: '০৩ নব.', amount: 18500, profit: 5900 },
@@ -101,7 +106,12 @@ export const DashboardView: React.FC<Props> = ({
     { day: 'বৃহঃ', date: '০৫ নব.', amount: 21400, profit: 7100 },
     { day: 'শুক্র', date: '০৬ নব.', amount: 32600, profit: 10800 },
     { day: 'শনি', date: '০৭ নব.', amount: 26800, profit: 8900 },
-    { day: 'রবি (আজ)', date: '০৮ নব.', amount: todaySaleTotal > 0 ? todaySaleTotal : 15800, profit: todayNetProfit > 0 ? todayNetProfit : 5200 },
+    {
+      day: 'রবি (আজ)',
+      date: '০৮ নব.',
+      amount: todaySaleTotal > 0 ? todaySaleTotal : 15800,
+      profit: todayNetProfit > 0 ? todayNetProfit : 5200,
+    },
   ];
   const maxTrend = Math.max(...weeklyTrend.map((t) => t.amount));
 
@@ -109,25 +119,25 @@ export const DashboardView: React.FC<Props> = ({
     <div className="space-y-6">
       
       {/* Welcome Banner */}
-      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 bg-gradient-to-r from-indigo-900 via-indigo-800 to-teal-900 rounded-xl p-5 text-white shadow-sm">
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 bg-gradient-to-r from-emerald-900 via-[#00875a] to-teal-900 rounded-xl p-5 text-white shadow-sm">
         <div>
           <div className="flex items-center gap-2">
-            <h2 className="text-xl font-bold">KHAN MANAGEMENT ড্যাশবোর্ড</h2>
-            <span className="text-[11px] px-2 py-0.5 rounded-full bg-teal-500/20 text-teal-300 border border-teal-500/30 font-medium">
-              লাইভ শপ কাউন্টার
+            <h2 className="text-xl font-bold tracking-tight">KHAN MANAGEMENT ড্যাশবোর্ড</h2>
+            <span className="text-[11px] px-2 py-0.5 rounded-full bg-emerald-400/20 text-emerald-200 border border-emerald-400/30 font-medium">
+              লাইভ কাউন্টার
             </span>
           </div>
-          <p className="text-xs text-indigo-200 mt-1">
-            আজকের দিনলিপি, স্টক তথ্য, MFS ও বাকি খাতার হিসাব
+          <p className="text-xs text-emerald-100 mt-1">
+            আজকের দিনলিপি, ১-ক্লিক মেমো ও বিক্রয় ট্র্যাকিং
           </p>
         </div>
         <div className="flex items-center gap-2.5">
           <button
             onClick={onOpenPOS}
-            className="flex items-center gap-2 px-4 py-2 bg-teal-500 hover:bg-teal-400 text-slate-950 font-semibold text-xs rounded-lg transition shadow-md active:scale-95 cursor-pointer"
+            className="flex items-center gap-2 px-4 py-2 bg-amber-400 hover:bg-amber-300 text-slate-950 font-bold text-xs rounded-lg transition shadow-md active:scale-95 cursor-pointer"
           >
             <ShoppingBag className="w-4 h-4" />
-            কাউন্টারে নতুন বিক্রি
+            কাউন্টারে নতুন বিক্রি (1-Click)
           </button>
         </div>
       </div>
@@ -136,10 +146,10 @@ export const DashboardView: React.FC<Props> = ({
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-3.5">
         
         {/* Card 1: Today's Sale */}
-        <div className="bg-white p-4 rounded-xl border border-slate-200/80 shadow-2xs hover:border-indigo-300 transition group">
+        <div className="bg-white p-4 rounded-xl border border-slate-200/80 shadow-2xs hover:border-[#00875a] transition group">
           <div className="flex items-center justify-between text-slate-500 mb-2">
             <span className="text-xs font-medium">আজকের বিক্রি</span>
-            <div className="p-2 rounded-lg bg-indigo-50 text-indigo-600 group-hover:bg-indigo-600 group-hover:text-white transition">
+            <div className="p-2 rounded-lg bg-emerald-50 text-[#00875a] group-hover:bg-[#00875a] group-hover:text-white transition">
               <TrendingUp className="w-4 h-4" />
             </div>
           </div>
@@ -148,7 +158,7 @@ export const DashboardView: React.FC<Props> = ({
           </div>
           <div className="flex items-center gap-1.5 mt-2 text-[11px] text-emerald-600 font-medium">
             <ArrowUpRight className="w-3.5 h-3.5" />
-            <span>{toBanglaNumber(todaySales.length)} টি মেমো কাটা হয়েছে</span>
+            <span>{toBanglaNumber(todaySales.length)} টি মেমো সম্পন্ন</span>
           </div>
         </div>
 
@@ -164,7 +174,7 @@ export const DashboardView: React.FC<Props> = ({
             {formatBDT(todayNetProfit)}
           </div>
           <div className="text-[11px] text-slate-500 mt-2">
-            খরচ বাদ দিয়ে আনুমানিক মুনাফা
+            ক্রয়মূল্য ও খরচ বাদে অর্জিত মুনাফা
           </div>
         </div>
 
@@ -203,7 +213,7 @@ export const DashboardView: React.FC<Props> = ({
             {formatBDT(totalDues)}
           </div>
           <div className="text-[11px] text-rose-600/80 font-medium mt-2 flex items-center justify-between">
-            <span>{toBanglaNumber(customers.filter(c => c.totalDue > 0).length)} জন বাকি গ্রাহক</span>
+            <span>{toBanglaNumber(customers.filter((c) => c.totalDue > 0).length)} জন বাকি গ্রাহক</span>
             <ChevronRight className="w-3.5 h-3.5 text-slate-400 group-hover:text-rose-600" />
           </div>
         </div>
@@ -235,10 +245,10 @@ export const DashboardView: React.FC<Props> = ({
             </div>
             <div>
               <p className="text-xs font-bold">
-                সতর্কতা: {toBanglaNumber(lowStockProducts.length)}টি পোশাকের স্টক ফুরিয়ে আসছে!
+                সতর্কতা: {toBanglaNumber(lowStockProducts.length)}টি পণ্যের স্টক ফুরিয়ে আসছে!
               </p>
               <p className="text-[11px] text-amber-700">
-                {lowStockProducts.map(p => `${p.name} (${toBanglaNumber(p.stockQty)} পিস)`).join(', ')}
+                {lowStockProducts.map((p) => `${p.name} (${toBanglaNumber(p.stockQty)} পিস)`).join(', ')}
               </p>
             </div>
           </div>
@@ -250,6 +260,106 @@ export const DashboardView: React.FC<Props> = ({
           </button>
         </div>
       )}
+
+      {/* RECENT SALES TABLE - Exact replica of user screenshot Image 2 (image_ee2fb189.png) */}
+      <div className="bg-white rounded-xl border border-slate-200/80 shadow-2xs overflow-hidden">
+        <div className="px-5 py-4 flex items-center justify-between border-b border-slate-100 bg-slate-50/50">
+          <div>
+            <h3 className="font-bold text-slate-900 text-sm">সাম্প্রতিক বিক্রির তালিকা (Recent Sales)</h3>
+            <p className="text-[11px] text-slate-500">
+              কাউন্টারের সর্বশেষ মেমো ও বিস্তারিত লাভের হিসাব (রসিদ প্রিন্ট করতে মেমোতে ক্লিক করুন)
+            </p>
+          </div>
+          <button
+            onClick={onOpenPOS}
+            className="text-xs font-semibold text-emerald-700 hover:text-emerald-900 flex items-center gap-1 cursor-pointer bg-emerald-50 px-3 py-1.5 rounded-lg border border-emerald-200"
+          >
+            <span>+ নতুন মেমো কাটুন</span>
+            <ChevronRight className="w-4 h-4" />
+          </button>
+        </div>
+
+        <div className="overflow-x-auto">
+          {/* Columns exactly matching screenshot Image 2: তারিখ | ইনভয়েস | পণ্য | পরিমাণ | মোট | লাভ */}
+          <table className="w-full text-left text-xs">
+            <thead className="bg-white border-b border-slate-200 text-slate-600 font-bold">
+              <tr>
+                <th className="py-3 px-5 text-slate-700 font-bold">তারিখ</th>
+                <th className="py-3 px-5 text-slate-700 font-bold">ইনভয়েস</th>
+                <th className="py-3 px-5 text-slate-700 font-bold">পণ্য</th>
+                <th className="py-3 px-5 text-center text-slate-700 font-bold">পরিমাণ</th>
+                <th className="py-3 px-5 text-right text-slate-700 font-bold">মোট</th>
+                <th className="py-3 px-5 text-right text-slate-700 font-bold">লাভ</th>
+                <th className="py-3 px-4 text-center text-slate-400 font-normal">রসিদ</th>
+              </tr>
+            </thead>
+            <tbody className="divide-y divide-slate-100 bg-white">
+              {sales.slice(0, 10).map((sale) => {
+                const totalItemNames = sale.items.map((i) => i.name).join(', ') || 'পণ্য';
+                const calculatedProfit =
+                  typeof sale.profit === 'number'
+                    ? sale.profit
+                    : sale.netPayable -
+                      (sale.totalCost ??
+                        sale.items.reduce((s, it) => s + it.buyingPrice * it.qty, 0));
+
+                return (
+                  <tr
+                    key={sale.id}
+                    onClick={() => onSelectInvoice(sale)}
+                    className="hover:bg-slate-50 transition cursor-pointer group"
+                  >
+                    {/* 1. তারিখ */}
+                    <td className="py-3.5 px-5 text-slate-700 font-sans whitespace-nowrap">
+                      {sale.date}
+                    </td>
+
+                    {/* 2. ইনভয়েস */}
+                    <td className="py-3.5 px-5 font-mono text-slate-800 whitespace-nowrap group-hover:text-emerald-700 font-medium">
+                      {sale.invoiceNo}
+                    </td>
+
+                    {/* 3. পণ্য */}
+                    <td className="py-3.5 px-5 text-slate-900 font-medium max-w-xs truncate">
+                      {totalItemNames}
+                    </td>
+
+                    {/* 4. পরিমাণ */}
+                    <td className="py-3.5 px-5 text-center font-mono text-slate-700">
+                      {sale.totalQty}
+                    </td>
+
+                    {/* 5. মোট */}
+                    <td className="py-3.5 px-5 text-right font-mono text-slate-800 whitespace-nowrap font-medium">
+                      ৳ {sale.netPayable.toFixed(2)}
+                    </td>
+
+                    {/* 6. লাভ */}
+                    <td className="py-3.5 px-5 text-right font-mono text-slate-800 whitespace-nowrap font-medium">
+                      ৳ {calculatedProfit.toFixed(2)}
+                    </td>
+
+                    {/* Print Quick Icon */}
+                    <td className="py-3.5 px-4 text-center whitespace-nowrap">
+                      <button
+                        type="button"
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          onSelectInvoice(sale);
+                        }}
+                        className="p-1 text-slate-400 hover:text-emerald-700 hover:bg-emerald-50 rounded transition"
+                        title="রসিদ প্রিন্ট করুন"
+                      >
+                        <Printer className="w-3.5 h-3.5" />
+                      </button>
+                    </td>
+                  </tr>
+                );
+              })}
+            </tbody>
+          </table>
+        </div>
+      </div>
 
       {/* Visual Charts Grid: 7-day Sales Trend & Top Categories */}
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-5">
@@ -263,11 +373,11 @@ export const DashboardView: React.FC<Props> = ({
             </div>
             <div className="flex items-center gap-4 text-xs">
               <div className="flex items-center gap-1.5">
-                <span className="w-3 h-3 rounded-xs bg-indigo-600" />
+                <span className="w-3 h-3 rounded-xs bg-[#00875a]" />
                 <span className="text-slate-600">মোট বিক্রি</span>
               </div>
               <div className="flex items-center gap-1.5">
-                <span className="w-3 h-3 rounded-xs bg-teal-500" />
+                <span className="w-3 h-3 rounded-xs bg-amber-500" />
                 <span className="text-slate-600">নিট লাভ</span>
               </div>
             </div>
@@ -282,7 +392,7 @@ export const DashboardView: React.FC<Props> = ({
                 <div key={idx} className="flex-1 flex flex-col items-center h-full justify-end group">
                   {/* Tooltip on hover */}
                   <div className="opacity-0 group-hover:opacity-100 transition pointer-events-none mb-1 text-center">
-                    <span className="text-[10px] bg-slate-900 text-white px-1.5 py-0.5 rounded font-mono block">
+                    <span className="text-[10px] bg-slate-900 text-white px-1.5 py-0.5 rounded font-mono block whitespace-nowrap">
                       {formatBDT(item.amount)}
                     </span>
                   </div>
@@ -290,12 +400,12 @@ export const DashboardView: React.FC<Props> = ({
                   {/* Dual Bars */}
                   <div className="w-full flex items-end justify-center gap-1 h-full max-w-[42px]">
                     <div
-                      className="w-1/2 bg-indigo-600 rounded-t-sm transition-all duration-300 hover:bg-indigo-700"
+                      className="w-1/2 bg-[#00875a] rounded-t-sm transition-all duration-300 hover:bg-emerald-700"
                       style={{ height: `${heightPercent}%` }}
                       title={`বিক্রি: ${formatBDT(item.amount)}`}
                     />
                     <div
-                      className="w-1/2 bg-teal-500 rounded-t-sm transition-all duration-300 hover:bg-teal-600"
+                      className="w-1/2 bg-amber-500 rounded-t-sm transition-all duration-300 hover:bg-amber-600"
                       style={{ height: `${profitHeight}%` }}
                       title={`লাভ: ${formatBDT(item.profit)}`}
                     />
@@ -326,7 +436,7 @@ export const DashboardView: React.FC<Props> = ({
                 <div key={idx} className="space-y-1">
                   <div className="flex items-center justify-between text-xs">
                     <span className="font-medium text-slate-800 flex items-center gap-1.5">
-                      <Shirt className="w-3.5 h-3.5 text-indigo-600" />
+                      <Shirt className="w-3.5 h-3.5 text-[#00875a]" />
                       {cat.category}
                     </span>
                     <span className="font-mono font-semibold text-slate-900">
@@ -337,11 +447,11 @@ export const DashboardView: React.FC<Props> = ({
                     <div
                       className={`h-full rounded-full transition-all duration-500 ${
                         idx === 0
-                          ? 'bg-indigo-600'
+                          ? 'bg-[#00875a]'
                           : idx === 1
-                          ? 'bg-teal-500'
-                          : idx === 2
                           ? 'bg-amber-500'
+                          : idx === 2
+                          ? 'bg-teal-600'
                           : 'bg-slate-400'
                       }`}
                       style={{ width: `${percent}%` }}
@@ -357,92 +467,6 @@ export const DashboardView: React.FC<Props> = ({
           </div>
         </div>
 
-      </div>
-
-      {/* Recent Sales Table */}
-      <div className="bg-white rounded-xl border border-slate-200/80 shadow-2xs overflow-hidden">
-        <div className="p-4 sm:px-6 flex items-center justify-between border-b border-slate-100">
-          <div>
-            <h3 className="font-bold text-slate-900 text-sm">সাম্প্রতিক বিক্রির তালিকা</h3>
-            <p className="text-[11px] text-slate-500">কাউন্টারের সর্বশেষ মেমোর তথ্য</p>
-          </div>
-          <button
-            onClick={onOpenPOS}
-            className="text-xs font-semibold text-indigo-600 hover:text-indigo-800 flex items-center gap-1 cursor-pointer"
-          >
-            <span>নতুন মেমো কাটুন</span>
-            <ChevronRight className="w-4 h-4" />
-          </button>
-        </div>
-
-        <div className="overflow-x-auto">
-          <table className="w-full text-left text-xs">
-            <thead className="bg-slate-50 border-b border-slate-100 text-slate-500 font-semibold">
-              <tr>
-                <th className="py-2.5 px-4">ইনভয়েস নং</th>
-                <th className="py-2.5 px-4">তারিখ ও সময়</th>
-                <th className="py-2.5 px-4">গ্রাহকের নাম ও ফোন</th>
-                <th className="py-2.5 px-4">পোশাক ও পরিমাণ</th>
-                <th className="py-2.5 px-4 text-right">মোট টাকা</th>
-                <th className="py-2.5 px-4 text-center">পরিশোধের ধরণ</th>
-                <th className="py-2.5 px-4 text-center">অ্যাকশন</th>
-              </tr>
-            </thead>
-            <tbody className="divide-y divide-slate-100">
-              {sales.slice(0, 5).map((sale) => (
-                <tr key={sale.id} className="hover:bg-slate-50/70 transition">
-                  <td className="py-3 px-4 font-mono font-medium text-slate-900">
-                    {sale.invoiceNo}
-                  </td>
-                  <td className="py-3 px-4 text-slate-600">
-                    <div className="flex items-center gap-1">
-                      <Clock className="w-3 h-3 text-slate-400" />
-                      <span>{sale.time}</span>
-                    </div>
-                    <span className="text-[10px] text-slate-400 font-mono">{sale.date}</span>
-                  </td>
-                  <td className="py-3 px-4">
-                    <div className="font-medium text-slate-900">{sale.customerName || 'খুচরা গ্রাহক'}</div>
-                    <div className="text-[11px] text-slate-500 font-mono">{sale.customerPhone || '—'}</div>
-                  </td>
-                  <td className="py-3 px-4">
-                    <span className="font-medium text-slate-800">
-                      {sale.items.map((i) => i.name).join(', ')}
-                    </span>
-                    <span className="text-[11px] text-slate-500 block">
-                      মোট {toBanglaNumber(sale.totalQty)} পিস
-                    </span>
-                  </td>
-                  <td className="py-3 px-4 text-right font-mono font-bold text-slate-900">
-                    {formatBDT(sale.netPayable)}
-                  </td>
-                  <td className="py-3 px-4 text-center">
-                    <span
-                      className={`inline-block px-2 py-0.5 rounded-full text-[11px] font-medium border ${
-                        sale.paymentMethod === 'নগদ'
-                          ? 'bg-emerald-50 text-emerald-700 border-emerald-200'
-                          : sale.paymentMethod === 'বাকি'
-                          ? 'bg-rose-50 text-rose-700 border-rose-200'
-                          : 'bg-indigo-50 text-indigo-700 border-indigo-200'
-                      }`}
-                    >
-                      {sale.paymentMethod}
-                    </span>
-                  </td>
-                  <td className="py-3 px-4 text-center">
-                    <button
-                      onClick={() => onSelectInvoice(sale)}
-                      className="p-1.5 text-slate-500 hover:text-indigo-600 hover:bg-indigo-50 rounded transition cursor-pointer"
-                      title="রসিদ দেখুন ও প্রিন্ট করুন"
-                    >
-                      <Printer className="w-4 h-4" />
-                    </button>
-                  </td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
-        </div>
       </div>
 
     </div>

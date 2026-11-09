@@ -6,8 +6,9 @@ import {
   Customer,
   PaymentMethod,
   ClothingSize,
+  ProductCategory,
 } from '../../types';
-import { playPOSBeep } from '../../utils/bengaliUtils';
+import { playPOSBeep, toBanglaNumber } from '../../utils/bengaliUtils';
 import {
   ShoppingCart,
   Search,
@@ -15,9 +16,9 @@ import {
   Trash2,
   Check,
   X,
-  User,
-  Phone,
-  AlertCircle,
+  PackagePlus,
+  Printer,
+  Sparkles,
 } from 'lucide-react';
 
 interface Props {
@@ -26,6 +27,7 @@ interface Props {
   onCompleteSale: (invoice: SaleInvoice) => void;
   soundEnabled: boolean;
   onOpenInventory: () => void;
+  onAddProduct?: (product: Product) => void;
 }
 
 export const POSView: React.FC<Props> = ({
@@ -34,6 +36,7 @@ export const POSView: React.FC<Props> = ({
   onCompleteSale,
   soundEnabled,
   onOpenInventory,
+  onAddProduct,
 }) => {
   // Top green box quick scan state
   const [quickCodeOrName, setQuickCodeOrName] = useState('');
@@ -58,6 +61,17 @@ export const POSView: React.FC<Props> = ({
   const [paymentMethod, setPaymentMethod] = useState<PaymentMethod>('নগদ');
   const [paidAmountInput, setPaidAmountInput] = useState<string>('');
 
+  // Quick Add Product Modal state
+  const [isAddProductOpen, setIsAddProductOpen] = useState(false);
+  const [newProductName, setNewProductName] = useState('');
+  const [newProductCategory, setNewProductCategory] = useState<ProductCategory>('পাঞ্জাবি');
+  const [newProductSize, setNewProductSize] = useState<ClothingSize>('L');
+  const [newProductColor, setNewProductColor] = useState('কালো');
+  const [newProductBuyingPrice, setNewProductBuyingPrice] = useState<string>('500');
+  const [newProductSellingPrice, setNewProductSellingPrice] = useState<string>('850');
+  const [newProductStock, setNewProductStock] = useState<string>('20');
+  const [newProductBarcode, setNewProductBarcode] = useState('');
+
   const searchInputRef = useRef<HTMLInputElement>(null);
 
   // Initialize selected product if available
@@ -70,7 +84,7 @@ export const POSView: React.FC<Props> = ({
       setQuickProductName(first.name);
       setQuickBuyingPrice(first.buyingPrice);
     }
-  }, [products]);
+  }, [products, selectedProductId]);
 
   // Handle product dropdown change
   const handleSelectProduct = (productId: string) => {
@@ -89,6 +103,7 @@ export const POSView: React.FC<Props> = ({
   // Handle barcode quick search enter
   const handleQuickSearch = (query: string) => {
     setQuickCodeOrName(query);
+    setLineCodeSearch(query);
     const match = products.find(
       (p) =>
         p.barcode.toLowerCase() === query.trim().toLowerCase() ||
@@ -99,7 +114,6 @@ export const POSView: React.FC<Props> = ({
       setQuickProductName(match.name);
       setQuickBuyingPrice(match.buyingPrice);
       setLinePrice(match.sellingPrice);
-      setLineCodeSearch(match.barcode);
       setLineSize(match.sizes[0] || 'M');
       setLineColor(match.availableColors[0] || 'স্ট্যান্ডার্ড');
     }
@@ -119,7 +133,7 @@ export const POSView: React.FC<Props> = ({
     }
 
     const newItem: CartItem = {
-      id: `cart-${Date.now()}-${Math.random().toString(36).substr(2, 4)}`,
+      id: `cart-${Date.now()}-${Math.random().toString(36).substring(2, 6)}`,
       productId: prod.id,
       barcode: prod.barcode,
       name: prod.name,
@@ -153,8 +167,10 @@ export const POSView: React.FC<Props> = ({
     }
   };
 
-  // Bill Calculations
-  const totalBill = cart.reduce((acc, item) => acc + item.subtotal, 0);
+  // Active items calculation (either cart items, or if cart is empty, current line item preview)
+  const currentLineSubtotal = lineQty * linePrice;
+  const cartTotalBill = cart.reduce((acc, item) => acc + item.subtotal, 0);
+  const totalBill = cart.length > 0 ? cartTotalBill : currentLineSubtotal;
   const payableAmount = Math.max(0, totalBill - discountAmount);
 
   // Autocomplete customer
@@ -168,12 +184,39 @@ export const POSView: React.FC<Props> = ({
     }
   };
 
-  // Complete Sale ("✓ বিক্রয় সম্পূর্ণ করুন")
+  // 1-Click Fast Confirm Sell (এক ক্লিকে মেমো ও সেল কনফার্ম)
   const handleCompleteSaleSubmit = () => {
-    if (cart.length === 0) {
-      if (soundEnabled) playPOSBeep('alert');
-      alert('কার্ট খালি! প্রথমে "+ পণ্য যোগ করুন" বোতামে ক্লিক করে পণ্য যোগ করুন।');
-      return;
+    // If cart has items, use cart. If cart is empty, use the current active line item!
+    let itemsToSell: CartItem[] = [];
+
+    if (cart.length > 0) {
+      itemsToSell = [...cart];
+    } else {
+      const prod = products.find((p) => p.id === selectedProductId);
+      if (!prod) {
+        if (soundEnabled) playPOSBeep('alert');
+        alert('অনুগ্রহ করে বিক্রির জন্য একটি পণ্য নির্বাচন করুন!');
+        return;
+      }
+      if (lineQty <= 0) {
+        alert('সঠিক পরিমাণ দিন!');
+        return;
+      }
+      itemsToSell = [
+        {
+          id: `cart-${Date.now()}`,
+          productId: prod.id,
+          barcode: prod.barcode,
+          name: prod.name,
+          category: prod.category,
+          size: lineSize,
+          color: lineColor,
+          unitPrice: linePrice,
+          buyingPrice: prod.buyingPrice,
+          qty: lineQty,
+          subtotal: lineQty * linePrice,
+        },
+      ];
     }
 
     if (paymentMethod === 'বাকি' && !customerName.trim() && !customerPhone.trim()) {
@@ -181,39 +224,51 @@ export const POSView: React.FC<Props> = ({
       return;
     }
 
-    const invoiceNo = `INV-2026-${Math.floor(100 + Math.random() * 900)}`;
+    const calculatedTotal = itemsToSell.reduce((acc, i) => acc + i.subtotal, 0);
+    const calculatedPayable = Math.max(0, calculatedTotal - discountAmount);
+    const totalCost = itemsToSell.reduce((acc, i) => acc + (i.buyingPrice * i.qty), 0);
+    const calculatedProfit = calculatedPayable - totalCost;
+
+    // Generate Invoice ID matching exact user image screenshot INV-YYYYMMDD-XXXX
     const now = new Date();
-    const dateStr = '2026-11-08';
+    const pad = (n: number) => (n < 10 ? '0' + n : n.toString());
+    const dateCode = `${now.getFullYear()}${pad(now.getMonth() + 1)}${pad(now.getDate())}`;
+    const seq = Math.floor(1000 + Math.random() * 9000).toString();
+    const invoiceNo = `INV-${dateCode}-${seq}`;
+    const dateFormatted = `${pad(now.getDate())}-${pad(now.getMonth() + 1)}-${now.getFullYear()}`;
+
     const hours = now.getHours();
     const minutes = now.getMinutes();
-    const timeStr = `${hours >= 12 ? 'বিকাল' : 'সকাল'} ${hours % 12 || 12}:${minutes < 10 ? '0' + minutes : minutes}`;
+    const timeFormatted = `${pad(hours > 12 ? hours - 12 : hours || 12)}:${pad(minutes)} ${hours >= 12 ? 'PM' : 'AM'}`;
 
     const paidVal =
       paidAmountInput !== ''
         ? parseFloat(paidAmountInput) || 0
         : paymentMethod === 'বাকি'
         ? 0
-        : payableAmount;
+        : calculatedPayable;
 
-    const dueAmount = Math.max(0, payableAmount - paidVal);
+    const dueAmount = Math.max(0, calculatedPayable - paidVal);
 
     const newInvoice: SaleInvoice = {
       id: `sale-${Date.now()}`,
       invoiceNo,
-      date: dateStr,
-      time: timeStr,
+      date: dateFormatted,
+      time: timeFormatted,
       customerName: customerName.trim() || 'খুচরা গ্রাহক',
       customerPhone: customerPhone.trim(),
-      items: [...cart],
-      totalQty: cart.reduce((acc, i) => acc + i.qty, 0),
-      subtotal: totalBill,
+      items: itemsToSell,
+      totalQty: itemsToSell.reduce((acc, i) => acc + i.qty, 0),
+      subtotal: calculatedTotal,
       discountType: 'flat',
       discountValue: discountAmount,
       discountAmount,
-      netPayable: payableAmount,
+      netPayable: calculatedPayable,
       paidAmount: paidVal,
       dueAmount,
       paymentMethod,
+      totalCost,
+      profit: calculatedProfit,
     };
 
     if (soundEnabled) playPOSBeep('success');
@@ -226,21 +281,88 @@ export const POSView: React.FC<Props> = ({
     setCustomerPhone('');
     setPaidAmountInput('');
     setPaymentMethod('নগদ');
+    setLineQty(1);
+  };
+
+  // Open Quick Add Product Modal with generated barcode
+  const handleOpenAddProductModal = () => {
+    const autoBarcode = `890124${Math.floor(1000 + Math.random() * 9000)}`;
+    setNewProductBarcode(autoBarcode);
+    setNewProductName('');
+    setNewProductBuyingPrice('500');
+    setNewProductSellingPrice('850');
+    setNewProductStock('20');
+    setIsAddProductOpen(true);
+  };
+
+  // Save new product instant stock add
+  const handleSaveQuickProduct = (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!newProductName.trim()) {
+      alert('পণ্যের নাম লিখুন!');
+      return;
+    }
+
+    const bPrice = parseFloat(newProductBuyingPrice) || 0;
+    const sPrice = parseFloat(newProductSellingPrice) || 0;
+    const stock = parseInt(newProductStock, 10) || 0;
+
+    const newProd: Product = {
+      id: `prod-${Date.now()}`,
+      barcode: newProductBarcode.trim() || `890124${Date.now().toString().slice(-4)}`,
+      name: newProductName.trim(),
+      category: newProductCategory,
+      sizes: [newProductSize],
+      availableColors: [newProductColor.trim() || 'স্ট্যান্ডার্ড'],
+      buyingPrice: bPrice,
+      sellingPrice: sPrice,
+      stockQty: stock,
+      minStockLevel: 5,
+      createdAt: '2026-11-08',
+    };
+
+    if (onAddProduct) {
+      onAddProduct(newProd);
+    }
+
+    // Instantly select this newly added product in POS
+    setSelectedProductId(newProd.id);
+    setQuickProductName(newProd.name);
+    setQuickBuyingPrice(newProd.buyingPrice);
+    setLinePrice(newProd.sellingPrice);
+    setLineCodeSearch(newProd.barcode);
+    setLineSize(newProductSize);
+    setLineColor(newProductColor.trim() || 'স্ট্যান্ডার্ড');
+
+    if (soundEnabled) playPOSBeep('success');
+    setIsAddProductOpen(false);
   };
 
   return (
     <div className="space-y-4 max-w-5xl mx-auto">
       
-      {/* 1. TOP GREEN BOX (Exact recreation of Image 1 top green bar) */}
+      {/* 1. TOP GREEN BOX (Exact recreation of Image 1 top green bar + Quick Add Button) */}
       <div className="bg-[#00875a] text-white rounded-xl p-3.5 sm:p-4 shadow-sm border border-[#00744d]">
         <div className="grid grid-cols-1 md:grid-cols-12 gap-3 items-center">
           
-          {/* Left Title: Cart Icon + পণ্য বিক্রয় */}
-          <div className="md:col-span-3 flex items-center gap-2">
-            <span className="p-1.5 bg-amber-400 text-slate-900 rounded-lg shadow-xs">
-              <ShoppingCart className="w-5 h-5" />
-            </span>
-            <h2 className="text-lg font-bold tracking-tight text-white">পণ্য বিক্রয়</h2>
+          {/* Left Title: Cart Icon + পণ্য বিক্রয় + Quick Add Button */}
+          <div className="md:col-span-3 flex items-center justify-between sm:justify-start gap-2">
+            <div className="flex items-center gap-2">
+              <span className="p-1.5 bg-amber-400 text-slate-900 rounded-lg shadow-xs">
+                <ShoppingCart className="w-5 h-5" />
+              </span>
+              <h2 className="text-lg font-bold tracking-tight text-white">পণ্য বিক্রয়</h2>
+            </div>
+            
+            <button
+              type="button"
+              onClick={handleOpenAddProductModal}
+              className="px-2.5 py-1 bg-white/20 hover:bg-white/30 text-white rounded-lg text-xs font-semibold flex items-center gap-1 transition cursor-pointer"
+              title="দ্রুত নতুন পণ্য ও স্টক অ্যাড করুন"
+            >
+              <PackagePlus className="w-3.5 h-3.5" />
+              <span>+ Add</span>
+            </button>
           </div>
 
           {/* Center Field 1: কোড / নাম লিখুন */}
@@ -308,9 +430,18 @@ export const POSView: React.FC<Props> = ({
 
           {/* Column 2: পণ্যের নাম Dropdown */}
           <div className="col-span-12 sm:col-span-4">
-            <label className="text-[11px] font-semibold text-slate-600 block mb-1">
-              পণ্যের নাম
-            </label>
+            <div className="flex items-center justify-between mb-1">
+              <label className="text-[11px] font-semibold text-slate-600">
+                পণ্যের নাম
+              </label>
+              <button
+                type="button"
+                onClick={handleOpenAddProductModal}
+                className="text-[10px] text-teal-700 hover:underline font-semibold cursor-pointer"
+              >
+                + নতুন পণ্য
+              </button>
+            </div>
             <select
               value={selectedProductId}
               onChange={(e) => handleSelectProduct(e.target.value)}
@@ -351,7 +482,7 @@ export const POSView: React.FC<Props> = ({
             />
           </div>
 
-          {/* Column 5: মোট (Display Box with light blue tint) */}
+          {/* Column 5: মোট (Display Box with light blue tint matching Image 1) */}
           <div className="col-span-3 sm:col-span-1.5">
             <label className="text-[11px] font-semibold text-slate-600 block mb-1">
               মোট
@@ -376,7 +507,7 @@ export const POSView: React.FC<Props> = ({
         </div>
       </div>
 
-      {/* 3. ACTIVE CART ITEMS TABLE (Shown when items are added) */}
+      {/* 3. ACTIVE CART ITEMS TABLE (Shown when multiple items are added) */}
       {cart.length > 0 && (
         <div className="bg-white rounded-xl shadow-sm border border-slate-200/80 overflow-hidden animate-in fade-in">
           <div className="px-4 py-2.5 bg-slate-50 border-b border-slate-100 flex items-center justify-between">
@@ -523,10 +654,15 @@ export const POSView: React.FC<Props> = ({
 
         </div>
 
-        {/* Right Column: বিক্রয়ের কাজ (Exact Blue & Green Buttons from Image 1) */}
+        {/* Right Column: বিক্রয়ের কাজ (Blue & Green Buttons) */}
         <div className="bg-white rounded-xl p-4 sm:p-5 shadow-sm border border-slate-200/80 flex flex-col justify-between">
           <div>
-            <h3 className="text-sm font-bold text-slate-800 pb-3">বিক্রয়ের কাজ</h3>
+            <div className="flex items-center justify-between pb-3">
+              <h3 className="text-sm font-bold text-slate-800">বিক্রয়ের কাজ</h3>
+              <span className="text-[11px] text-emerald-700 font-bold bg-emerald-50 px-2 py-0.5 rounded-full border border-emerald-200">
+                1-Click Fast POS
+              </span>
+            </div>
 
             <div className="space-y-3 mt-1">
               {/* Blue Button: + পণ্য যোগ করুন */}
@@ -539,28 +675,33 @@ export const POSView: React.FC<Props> = ({
                 <span>+ পণ্য যোগ করুন</span>
               </button>
 
-              {/* Green Button: ✓ বিক্রয় সম্পূর্ণ করুন */}
+              {/* Green Button: ✓ Confirm Sell (মেমো ও বিক্রি কনফার্ম) */}
               <button
                 type="button"
                 onClick={handleCompleteSaleSubmit}
-                className="w-full py-3 px-4 bg-[#16a34a] hover:bg-[#15803d] active:scale-98 text-white text-sm font-bold rounded-lg shadow-sm transition flex items-center justify-center gap-1.5 cursor-pointer"
+                className="w-full py-3.5 px-4 bg-[#16a34a] hover:bg-[#15803d] active:scale-98 text-white text-sm font-bold rounded-lg shadow-md transition flex items-center justify-center gap-2 cursor-pointer"
               >
                 <Check className="w-4 h-4 font-bold" />
-                <span>✓ বিক্রয় সম্পূর্ণ করুন</span>
+                <span>✓ Confirm Sell (মেমো ও বিক্রি কনফার্ম)</span>
               </button>
             </div>
           </div>
 
           {/* Quick instructions / count badge */}
-          <div className="mt-4 p-3 bg-slate-50 rounded-lg border border-slate-200/70 text-xs text-slate-600">
-            <div className="flex justify-between items-center mb-1">
-              <span>বর্তমানে কার্টে মোট পণ্য:</span>
-              <span className="font-mono font-bold text-slate-900">{cart.length} টি</span>
+          <div className="mt-4 p-3 bg-slate-50 rounded-lg border border-slate-200/70 text-xs text-slate-600 space-y-1">
+            <div className="flex justify-between items-center">
+              <span>কার্টে মোট পণ্য:</span>
+              <span className="font-mono font-bold text-slate-900">
+                {cart.length > 0 ? `${cart.length} টি` : `১ টি (সরাসরি নির্বাচন)`}
+              </span>
             </div>
             <div className="flex justify-between items-center text-emerald-700 font-bold">
-              <span>মোট টাকা:</span>
-              <span className="font-mono">৳ {payableAmount.toFixed(2)}</span>
+              <span>মোট পরিশোধযোগ্য:</span>
+              <span className="font-mono text-sm">৳ {payableAmount.toFixed(2)}</span>
             </div>
+            <p className="text-[10px] text-slate-400 pt-1 border-t border-slate-200">
+              * Confirm Sell চাপলেই অটোমেটিক মেমো প্রিন্ট ও ড্যাশবোর্ডে লাইভ আপডেট হবে
+            </p>
           </div>
         </div>
 
@@ -572,6 +713,193 @@ export const POSView: React.FC<Props> = ({
           বিক্রয় সংরক্ষণের আগে পণ্য, পরিমাণ ও স্টক যাচাই করুন।
         </p>
       </div>
+
+      {/* 6. QUICK ADD PRODUCT MODAL (দ্রুত স্টক অ্যাড করার অপশন) */}
+      {isAddProductOpen && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-xs p-4 overflow-y-auto">
+          <div className="relative w-full max-w-lg bg-white rounded-2xl shadow-2xl overflow-hidden border border-slate-200 animate-in fade-in zoom-in-95 duration-150">
+            
+            {/* Modal Header */}
+            <div className="px-6 py-4 bg-[#00875a] text-white flex items-center justify-between">
+              <div className="flex items-center gap-2">
+                <PackagePlus className="w-5 h-5 text-amber-300" />
+                <h3 className="font-bold text-base">নতুন পণ্য / দ্রুত স্টক অ্যাড</h3>
+              </div>
+              <button
+                onClick={() => setIsAddProductOpen(false)}
+                className="p-1 hover:bg-white/20 rounded-md text-white/80 hover:text-white cursor-pointer"
+              >
+                <X className="w-5 h-5" />
+              </button>
+            </div>
+
+            {/* Modal Form */}
+            <form onSubmit={handleSaveQuickProduct} className="p-6 space-y-4">
+              {/* Product Name */}
+              <div>
+                <label className="text-xs font-semibold text-slate-700 block mb-1">
+                  পণ্যের নাম <span className="text-rose-500">*</span>
+                </label>
+                <input
+                  type="text"
+                  required
+                  placeholder="যেমন: এক্সক্লুসিভ সেমি-লং সুতি পাঞ্জাবি / পোলো টি-শার্ট"
+                  value={newProductName}
+                  onChange={(e) => setNewProductName(e.target.value)}
+                  className="w-full px-3 py-2 text-xs border border-slate-300 rounded-lg focus:border-[#00875a] focus:outline-hidden"
+                />
+              </div>
+
+              {/* Category & Size Grid */}
+              <div className="grid grid-cols-2 gap-3">
+                <div>
+                  <label className="text-xs font-semibold text-slate-700 block mb-1">
+                    ক্যাটাগরি
+                  </label>
+                  <select
+                    value={newProductCategory}
+                    onChange={(e) => setNewProductCategory(e.target.value as ProductCategory)}
+                    className="w-full px-3 py-2 text-xs border border-slate-300 rounded-lg focus:border-[#00875a] focus:outline-hidden bg-white"
+                  >
+                    <option value="পাঞ্জাবি">পাঞ্জাবি</option>
+                    <option value="শার্ট">শার্ট</option>
+                    <option value="প্যান্ট">প্যান্ট</option>
+                    <option value="থ্রি-পিস">থ্রি-পিস</option>
+                    <option value="টি-শার্ট">টি-শার্ট</option>
+                    <option value="শাড়ি">শাড়ি</option>
+                    <option value="বাচ্চাদের পোশাক">বাচ্চাদের পোশাক</option>
+                    <option value="অন্যান্য">অন্যান্য</option>
+                  </select>
+                </div>
+
+                <div>
+                  <label className="text-xs font-semibold text-slate-700 block mb-1">
+                    সাইজ (Size)
+                  </label>
+                  <select
+                    value={newProductSize}
+                    onChange={(e) => setNewProductSize(e.target.value as ClothingSize)}
+                    className="w-full px-3 py-2 text-xs border border-slate-300 rounded-lg focus:border-[#00875a] focus:outline-hidden bg-white font-mono"
+                  >
+                    <option value="S">S</option>
+                    <option value="M">M</option>
+                    <option value="L">L</option>
+                    <option value="XL">XL</option>
+                    <option value="XXL">XXL</option>
+                    <option value="38">38</option>
+                    <option value="40">40</option>
+                    <option value="42">42</option>
+                    <option value="30">30</option>
+                    <option value="32">32</option>
+                    <option value="34">34</option>
+                    <option value="Free">Free Size</option>
+                  </select>
+                </div>
+              </div>
+
+              {/* Color & Barcode */}
+              <div className="grid grid-cols-2 gap-3">
+                <div>
+                  <label className="text-xs font-semibold text-slate-700 block mb-1">
+                    কালার / রঙ
+                  </label>
+                  <input
+                    type="text"
+                    placeholder="যেমন: নেভি ব্লু / মেরুন / কালো"
+                    value={newProductColor}
+                    onChange={(e) => setNewProductColor(e.target.value)}
+                    className="w-full px-3 py-2 text-xs border border-slate-300 rounded-lg focus:border-[#00875a] focus:outline-hidden"
+                  />
+                </div>
+
+                <div>
+                  <label className="text-xs font-semibold text-slate-700 block mb-1">
+                    বারকোড নম্বর
+                  </label>
+                  <input
+                    type="text"
+                    value={newProductBarcode}
+                    onChange={(e) => setNewProductBarcode(e.target.value)}
+                    className="w-full px-3 py-2 text-xs border border-slate-300 rounded-lg focus:border-[#00875a] focus:outline-hidden font-mono"
+                  />
+                </div>
+              </div>
+
+              {/* Buying Price, Selling Price & Stock Quantity */}
+              <div className="grid grid-cols-3 gap-3">
+                <div>
+                  <label className="text-xs font-semibold text-slate-700 block mb-1">
+                    ক্রয়মূল্য (টাকা)
+                  </label>
+                  <input
+                    type="number"
+                    min="0"
+                    required
+                    value={newProductBuyingPrice}
+                    onChange={(e) => setNewProductBuyingPrice(e.target.value)}
+                    className="w-full px-3 py-2 text-xs border border-slate-300 rounded-lg focus:border-[#00875a] focus:outline-hidden font-mono text-right"
+                  />
+                </div>
+
+                <div>
+                  <label className="text-xs font-semibold text-slate-700 block mb-1">
+                    বিক্রয়মূল্য (টাকা)
+                  </label>
+                  <input
+                    type="number"
+                    min="0"
+                    required
+                    value={newProductSellingPrice}
+                    onChange={(e) => setNewProductSellingPrice(e.target.value)}
+                    className="w-full px-3 py-2 text-xs border border-slate-300 rounded-lg focus:border-[#00875a] focus:outline-hidden font-mono text-right font-bold text-emerald-700"
+                  />
+                </div>
+
+                <div>
+                  <label className="text-xs font-semibold text-slate-700 block mb-1">
+                    প্রাথমিক স্টক (পিস)
+                  </label>
+                  <input
+                    type="number"
+                    min="1"
+                    required
+                    value={newProductStock}
+                    onChange={(e) => setNewProductStock(e.target.value)}
+                    className="w-full px-3 py-2 text-xs border border-slate-300 rounded-lg focus:border-[#00875a] focus:outline-hidden font-mono text-center font-bold text-slate-900"
+                  />
+                </div>
+              </div>
+
+              {/* Profit calculation note */}
+              <div className="p-2.5 bg-emerald-50 border border-emerald-200 rounded-lg flex items-center justify-between text-xs text-emerald-800">
+                <span>প্রতি পিসে প্রাক্কলিত লাভ:</span>
+                <span className="font-bold font-mono">
+                  ৳ {((parseFloat(newProductSellingPrice) || 0) - (parseFloat(newProductBuyingPrice) || 0)).toFixed(2)}
+                </span>
+              </div>
+
+              {/* Actions */}
+              <div className="flex items-center justify-end gap-2 pt-2 border-t border-slate-100">
+                <button
+                  type="button"
+                  onClick={() => setIsAddProductOpen(false)}
+                  className="px-4 py-2 border border-slate-300 rounded-lg text-xs font-semibold text-slate-700 hover:bg-slate-50 cursor-pointer"
+                >
+                  বাতিল
+                </button>
+                <button
+                  type="submit"
+                  className="px-5 py-2 bg-[#00875a] hover:bg-[#00744d] active:scale-98 text-white rounded-lg text-xs font-bold transition flex items-center gap-1.5 shadow-sm cursor-pointer"
+                >
+                  <Check className="w-4 h-4 font-bold" />
+                  <span>স্টকে যোগ করুন ও বিক্রি শুরু করুন</span>
+                </button>
+              </div>
+            </form>
+
+          </div>
+        </div>
+      )}
 
     </div>
   );

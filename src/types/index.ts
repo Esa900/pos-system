@@ -90,6 +90,8 @@ export interface SaleInvoice {
   dueAmount: number;
   paymentMethod: PaymentMethod;
   notes?: string;
+  totalCost?: number;
+  profit?: number;
 }
 
 export interface Supplier {
