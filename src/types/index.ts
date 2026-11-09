@@ -1,11 +1,17 @@
 export type ProductCategory = 
+  | 'ক্লথিং'
+  | 'লেডিস আইটেম'
+  | 'থ্রি-পিস'
+  | 'শাড়ি'
+  | 'বোরকা ও হিজাব'
+  | 'গ্রোসারী'
+  | 'ইলেকট্রনিক্স'
+  | 'কসমেটিকস'
+  | 'বাচ্চাদের পোশাক'
   | 'পাঞ্জাবি'
   | 'শার্ট'
   | 'প্যান্ট'
-  | 'থ্রি-পিস'
-  | 'শাড়ি'
   | 'টি-শার্ট'
-  | 'বাচ্চাদের পোশাক'
   | 'অন্যান্য';
 
 export type ClothingSize = 
@@ -22,6 +28,7 @@ export interface Product {
   barcode: string;
   name: string;
   category: ProductCategory;
+  unit?: string; // e.g. 'Pcs', 'Set', 'Goj', 'Meter', 'Kg'
   sizes: ClothingSize[];
   availableColors: string[];
   selectedSize?: ClothingSize;

@@ -127,10 +127,10 @@ export const ThermalReceiptModal: React.FC<Props> = ({ invoice, onClose }) => {
                 <span className="font-mono text-slate-700">{invoice.customerPhone}</span>
               </div>
             )}
-            <div className="flex justify-between">
-              <span className="text-slate-500">পেমেন্ট মোড:</span>
-              <span className="font-semibold text-emerald-800 font-mono text-[10px]">
-                {invoice.paymentMethod}
+            <div className="flex justify-between items-center">
+              <span className="text-slate-500">পেমেন্ট স্ট্যাটাস:</span>
+              <span className="font-bold text-emerald-800 bg-emerald-50 px-2 py-0.5 rounded border border-emerald-200 text-[10px]">
+                ✓ পরিশোধিত (DIRECT PAID)
               </span>
             </div>
           </div>
@@ -183,18 +183,10 @@ export const ThermalReceiptModal: React.FC<Props> = ({ invoice, onClose }) => {
               <span className="font-mono text-base text-emerald-800">৳ {invoice.netPayable.toFixed(2)}</span>
             </div>
 
-            <div className="flex justify-between text-[11px] text-slate-600">
-              <span>পরিশোধিত টাকা:</span>
-              <span className="font-mono font-semibold">৳ {invoice.paidAmount.toFixed(2)}</span>
+            <div className="flex justify-between items-center text-xs font-bold text-emerald-900 bg-emerald-50/90 p-2 rounded-lg border border-emerald-300 mt-1">
+              <span>পরিশোধিত টাকা (DIRECT PAID):</span>
+              <span className="font-mono text-sm font-extrabold text-emerald-800">৳ {invoice.netPayable.toFixed(2)}</span>
             </div>
-
-            {/* Only show baki alert if there is actual positive remaining due */}
-            {invoice.dueAmount > 0 && (
-              <div className="flex justify-between text-rose-600 font-bold bg-rose-50 p-1.5 rounded border border-rose-200 mt-1">
-                <span>বকেয়া বাকি:</span>
-                <span className="font-mono">৳ {invoice.dueAmount.toFixed(2)}</span>
-              </div>
-            )}
           </div>
 
           {/* Barcode Graphic */}

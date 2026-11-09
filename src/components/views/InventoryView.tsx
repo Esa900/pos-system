@@ -42,12 +42,13 @@ export const InventoryView: React.FC<Props> = ({
   const [isAddModalOpen, setIsAddModalOpen] = useState(false);
   const [pName, setPName] = useState('');
   const [pBarcode, setPBarcode] = useState('');
-  const [pCategory, setPCategory] = useState<ProductCategory>('পাঞ্জাবি');
-  const [pSelectedSizes, setPSelectedSizes] = useState<ClothingSize[]>(['M', 'L', 'XL']);
-  const [pColors, setPColors] = useState('সাদা, কালো, নেভি ব্লু');
+  const [pCategory, setPCategory] = useState<ProductCategory>('ক্লথিং');
+  const [pUnit, setPUnit] = useState<string>('পিস (Pcs)');
+  const [pSelectedSizes, setPSelectedSizes] = useState<ClothingSize[]>(['Free']);
+  const [pColors, setPColors] = useState('স্ট্যান্ডার্ড');
   const [pBuyPrice, setPBuyPrice] = useState('');
   const [pSellPrice, setPSellPrice] = useState('');
-  const [pStock, setPStock] = useState('');
+  const [pStock, setPStock] = useState('10');
   const [pMinStock, setPMinStock] = useState('5');
   const [pFabric, setPFabric] = useState('');
 
@@ -58,17 +59,31 @@ export const InventoryView: React.FC<Props> = ({
 
   const categories: (ProductCategory | 'সব')[] = [
     'সব',
-    'পাঞ্জাবি',
-    'শার্ট',
-    'প্যান্ট',
+    'ক্লথিং',
+    'লেডিস আইটেম',
     'থ্রি-পিস',
     'শাড়ি',
-    'টি-শার্ট',
+    'বোরকা ও হিজাব',
+    'গ্রোসারী',
+    'ইলেকট্রনিক্স',
+    'কসমেটিকস',
     'বাচ্চাদের পোশাক',
+    'পাঞ্জাবি',
+    'অন্যান্য',
+  ];
+
+  const availableUnits = [
+    'পিস (Pcs)',
+    'সেট (Set)',
+    'ডজন (Dozen)',
+    'গজ (Goj)',
+    'মিটার (Meter)',
+    'কেজি (Kg)',
+    'প্যাকেট (Pkt)',
   ];
 
   const availableSizesList: ClothingSize[] = [
-    'XS', 'S', 'M', 'L', 'XL', 'XXL', '38', '40', '42', '44', '30', '32', '34', '36', 'Free'
+    'Free', 'S', 'M', 'L', 'XL', 'XXL', '38', '40', '42', '44', '30', '32', '34', '36'
   ];
 
   // Auto-generate barcode helper
@@ -127,7 +142,8 @@ export const InventoryView: React.FC<Props> = ({
       barcode: pBarcode.trim() || `890124${Math.floor(1000 + Math.random() * 9000)}`,
       name: pName.trim(),
       category: pCategory,
-      sizes: pSelectedSizes.length > 0 ? pSelectedSizes : ['M'],
+      unit: pUnit,
+      sizes: pSelectedSizes.length > 0 ? pSelectedSizes : ['Free'],
       availableColors: colorsArr.length > 0 ? colorsArr : ['স্ট্যান্ডার্ড'],
       buyingPrice: buy,
       sellingPrice: sell,
@@ -146,7 +162,7 @@ export const InventoryView: React.FC<Props> = ({
     setPBarcode('');
     setPBuyPrice('');
     setPSellPrice('');
-    setPStock('');
+    setPStock('10');
     setPFabric('');
   };
 
@@ -397,8 +413,8 @@ export const InventoryView: React.FC<Props> = ({
           <div className="bg-white rounded-xl shadow-xl border border-slate-200 max-w-xl w-full p-6 animate-in fade-in zoom-in-95 my-8">
             <div className="flex items-center justify-between pb-3 border-b border-slate-100">
               <div className="flex items-center gap-2">
-                <Shirt className="w-5 h-5 text-indigo-600" />
-                <h3 className="font-bold text-slate-900 text-base">+ নতুন পোশাক ইনভেন্টরিতে যুক্ত করুন</h3>
+                <PackagePlus className="w-5 h-5 text-emerald-600" />
+                <h3 className="font-bold text-slate-900 text-base">নতুন প্রোডাক্ট যোগ করুন (Add Product)</h3>
               </div>
               <button
                 onClick={() => setIsAddModalOpen(false)}
@@ -408,30 +424,154 @@ export const InventoryView: React.FC<Props> = ({
               </button>
             </div>
 
-            <form onSubmit={handleAddSubmit} className="mt-4 space-y-3.5 text-xs">
+            <form onSubmit={handleAddSubmit} className="mt-4 space-y-4 text-xs">
               
-              {/* Product Name */}
+              {/* ১. প্রোডাক্টের নাম (Product Name) */}
               <div>
-                <label className="font-semibold text-slate-700 block mb-1">পোশাকের নাম *</label>
+                <label className="font-bold text-slate-800 block mb-1">
+                  প্রোডাক্টের নাম (Product Name) <span className="text-rose-500">*</span>
+                </label>
                 <input
                   type="text"
                   required
-                  placeholder="যেমন: প্রিমিয়াম সেমি-লং পাঞ্জাবি"
+                  placeholder="পণ্যের পরিষ্কার ও নির্দিষ্ট নাম (যেমন: সুতি থ্রি-পিস / পার্টি বোরকা / গ্রোসারী পণ্য)"
                   value={pName}
                   onChange={(e) => setPName(e.target.value)}
-                  className="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-lg focus:bg-white focus:border-indigo-500 focus:outline-hidden"
+                  className="w-full px-3.5 py-2.5 bg-slate-50 border border-slate-300 rounded-lg focus:bg-white focus:border-emerald-600 focus:outline-hidden text-slate-900 font-medium"
                 />
+                <p className="text-[11px] text-slate-500 mt-0.5">পণ্যের পরিষ্কার ও নির্দিষ্ট নাম।</p>
               </div>
 
-              {/* Barcode & Category */}
+              {/* ২. ক্যাটাগরি (Category) ও ৩. ইউনিট/পরিমাপ (Unit) */}
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                 <div>
+                  <label className="font-bold text-slate-800 block mb-1">
+                    ক্যাটাগরি (Category) <span className="text-rose-500">*</span>
+                  </label>
+                  <select
+                    value={pCategory}
+                    onChange={(e) => setPCategory(e.target.value as ProductCategory)}
+                    className="w-full px-3 py-2 bg-slate-50 border border-slate-300 rounded-lg focus:bg-white focus:border-emerald-600 focus:outline-hidden font-medium text-slate-900"
+                  >
+                    {categories.filter((c) => c !== 'সব').map((cat) => (
+                      <option key={cat} value={cat}>{cat}</option>
+                    ))}
+                  </select>
+                  <p className="text-[11px] text-slate-500 mt-0.5">পণ্যটি কোন ক্যাটাগরির (যেমন: গ্রোসারী, ইলেকট্রনিক্স, ক্লথিং ইত্যাদি)।</p>
+                </div>
+
+                <div>
+                  <label className="font-bold text-slate-800 block mb-1">
+                    ইউনিট/পরিমাপ (Unit) <span className="text-rose-500">*</span>
+                  </label>
+                  <select
+                    value={pUnit}
+                    onChange={(e) => setPUnit(e.target.value)}
+                    className="w-full px-3 py-2 bg-slate-50 border border-slate-300 rounded-lg focus:bg-white focus:border-emerald-600 focus:outline-hidden font-medium text-slate-900"
+                  >
+                    {availableUnits.map((u) => (
+                      <option key={u} value={u}>{u}</option>
+                    ))}
+                  </select>
+                  <p className="text-[11px] text-slate-500 mt-0.5">পণ্যটি কি পিস (Pcs), সেট বা অন্যান্য পরিমাপে হিসাব হবে।</p>
+                </div>
+              </div>
+
+              {/* ৪. মূল্য নির্ধারণ (Pricing) */}
+              <div className="p-3.5 bg-emerald-50/70 rounded-xl border border-emerald-200/90 space-y-3">
+                <div className="flex items-center justify-between border-b border-emerald-200 pb-1.5">
+                  <h4 className="font-bold text-emerald-950 text-xs flex items-center gap-1.5">
+                    <span>💰 মূল্য নির্ধারণ (Pricing)</span>
+                  </h4>
+                  {pBuyPrice && pSellPrice && (
+                    <span className="text-[11px] font-bold text-emerald-800 font-mono">
+                      লাভ: ৳ {((parseFloat(pSellPrice) || 0) - (parseFloat(pBuyPrice) || 0)).toFixed(2)}
+                    </span>
+                  )}
+                </div>
+
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                  <div>
+                    <label className="font-semibold text-slate-800 block mb-1">
+                      ক্রয়মূল্য (Cost / Purchase Price) <span className="text-rose-500">*</span>
+                    </label>
+                    <div className="relative">
+                      <span className="absolute left-3 top-1/2 -translate-y-1/2 text-xs text-slate-400 font-bold">৳</span>
+                      <input
+                        type="number"
+                        min="0"
+                        step="any"
+                        required
+                        placeholder="0.00"
+                        value={pBuyPrice}
+                        onChange={(e) => setPBuyPrice(e.target.value)}
+                        className="w-full pl-7 pr-3 py-2 bg-white border border-slate-300 rounded-lg focus:border-emerald-600 focus:outline-hidden font-mono font-bold text-slate-900 text-right"
+                      />
+                    </div>
+                    <p className="text-[10px] text-slate-500 mt-0.5">পণ্যটি কত টাকায় কেনা হয়েছে।</p>
+                  </div>
+
+                  <div>
+                    <label className="font-semibold text-slate-800 block mb-1">
+                      বিক্রয়মূল্য (Selling Price) <span className="text-rose-500">*</span>
+                    </label>
+                    <div className="relative">
+                      <span className="absolute left-3 top-1/2 -translate-y-1/2 text-xs text-slate-400 font-bold">৳</span>
+                      <input
+                        type="number"
+                        min="0"
+                        step="any"
+                        required
+                        placeholder="0.00"
+                        value={pSellPrice}
+                        onChange={(e) => setPSellPrice(e.target.value)}
+                        className="w-full pl-7 pr-3 py-2 bg-white border border-slate-300 rounded-lg focus:border-emerald-600 focus:outline-hidden font-mono font-bold text-emerald-800 text-right"
+                      />
+                    </div>
+                    <p className="text-[10px] text-slate-500 mt-0.5">খুচরা বা পাইকারি মূল্যে কত টাকায় বিক্রি হবে।</p>
+                  </div>
+                </div>
+              </div>
+
+              {/* ৫. স্টক ও বারকোড */}
+              <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+                <div>
+                  <label className="font-semibold text-slate-800 block mb-1">
+                    প্রারম্ভিক স্টক (Stock Qty) <span className="text-rose-500">*</span>
+                  </label>
+                  <input
+                    type="number"
+                    min="0"
+                    required
+                    placeholder="10"
+                    value={pStock}
+                    onChange={(e) => setPStock(e.target.value)}
+                    className="w-full px-3 py-2 bg-slate-50 border border-slate-300 rounded-lg focus:bg-white focus:border-emerald-600 focus:outline-hidden font-mono text-center font-bold text-slate-900"
+                  />
+                  <p className="text-[10px] text-slate-500 mt-0.5">বর্তমানে মজুদ সংখ্যা</p>
+                </div>
+
+                <div>
+                  <label className="font-semibold text-slate-800 block mb-1">
+                    সতর্কতা লেভেল (Min Stock)
+                  </label>
+                  <input
+                    type="number"
+                    min="1"
+                    value={pMinStock}
+                    onChange={(e) => setPMinStock(e.target.value)}
+                    className="w-full px-3 py-2 bg-slate-50 border border-slate-300 rounded-lg focus:bg-white focus:border-emerald-600 focus:outline-hidden font-mono text-center text-slate-800"
+                  />
+                  <p className="text-[10px] text-slate-500 mt-0.5">কম স্টকের সতর্কবার্তা</p>
+                </div>
+
+                <div>
                   <div className="flex justify-between items-center mb-1">
-                    <label className="font-semibold text-slate-700">বারকোড কোড</label>
+                    <label className="font-semibold text-slate-800">বারকোড কোড</label>
                     <button
                       type="button"
                       onClick={handleGenerateBarcode}
-                      className="text-[10px] text-indigo-600 hover:underline cursor-pointer"
+                      className="text-[10px] text-emerald-700 font-bold hover:underline cursor-pointer"
                     >
                       অটো জেনারেট
                     </button>
@@ -440,119 +580,10 @@ export const InventoryView: React.FC<Props> = ({
                     type="text"
                     value={pBarcode}
                     onChange={(e) => setPBarcode(e.target.value)}
-                    className="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-lg focus:bg-white focus:border-indigo-500 focus:outline-hidden font-mono"
+                    className="w-full px-3 py-2 bg-slate-50 border border-slate-300 rounded-lg focus:bg-white focus:border-emerald-600 focus:outline-hidden font-mono text-slate-900"
                     placeholder="890124xxxx"
                   />
-                </div>
-
-                <div>
-                  <label className="font-semibold text-slate-700 block mb-1">ক্যাটাগরি</label>
-                  <select
-                    value={pCategory}
-                    onChange={(e) => setPCategory(e.target.value as ProductCategory)}
-                    className="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-lg focus:bg-white focus:border-indigo-500 focus:outline-hidden"
-                  >
-                    {categories.filter((c) => c !== 'সব').map((cat) => (
-                      <option key={cat} value={cat}>{cat}</option>
-                    ))}
-                  </select>
-                </div>
-              </div>
-
-              {/* Sizes Multi-Select */}
-              <div>
-                <label className="font-semibold text-slate-700 block mb-1">
-                  উপলব্ধ সাইজ নির্বাচন করুন (ক্লিক করে নির্বাচন/বাতিল করুন)
-                </label>
-                <div className="flex items-center gap-1.5 flex-wrap">
-                  {availableSizesList.map((sz) => {
-                    const isSelected = pSelectedSizes.includes(sz);
-                    return (
-                      <button
-                        key={sz}
-                        type="button"
-                        onClick={() => toggleSize(sz)}
-                        className={`px-2.5 py-1 text-xs font-mono font-medium rounded border transition cursor-pointer ${
-                          isSelected
-                            ? 'bg-indigo-600 text-white border-indigo-600'
-                            : 'bg-slate-50 text-slate-600 border-slate-200 hover:border-indigo-300'
-                        }`}
-                      >
-                        {sz}
-                      </button>
-                    );
-                  })}
-                </div>
-              </div>
-
-              {/* Colors & Fabric */}
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                <div>
-                  <label className="font-semibold text-slate-700 block mb-1">রং সমুহ (কমা দিয়ে লিখুন)</label>
-                  <input
-                    type="text"
-                    value={pColors}
-                    onChange={(e) => setPColors(e.target.value)}
-                    placeholder="সাদা, কালো, নেভি ব্লু"
-                    className="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-lg focus:bg-white focus:border-indigo-500 focus:outline-hidden"
-                  />
-                </div>
-                <div>
-                  <label className="font-semibold text-slate-700 block mb-1">কাপড়ের বিবরণ / ফেব্রিক</label>
-                  <input
-                    type="text"
-                    value={pFabric}
-                    onChange={(e) => setPFabric(e.target.value)}
-                    placeholder="যেমন: ১০০% সুতি কটন"
-                    className="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-lg focus:bg-white focus:border-indigo-500 focus:outline-hidden"
-                  />
-                </div>
-              </div>
-
-              {/* Pricing & Stock */}
-              <div className="grid grid-cols-2 sm:grid-cols-4 gap-2.5">
-                <div>
-                  <label className="font-semibold text-slate-700 block mb-1">কেনা দাম (৳) *</label>
-                  <input
-                    type="number"
-                    required
-                    placeholder="850"
-                    value={pBuyPrice}
-                    onChange={(e) => setPBuyPrice(e.target.value)}
-                    className="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-lg focus:bg-white focus:border-indigo-500 focus:outline-hidden font-mono"
-                  />
-                </div>
-                <div>
-                  <label className="font-semibold text-slate-700 block mb-1">বিক্রয় মূল্য (৳) *</label>
-                  <input
-                    type="number"
-                    required
-                    placeholder="1350"
-                    value={pSellPrice}
-                    onChange={(e) => setPSellPrice(e.target.value)}
-                    className="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-lg focus:bg-white focus:border-indigo-500 focus:outline-hidden font-mono"
-                  />
-                </div>
-                <div>
-                  <label className="font-semibold text-slate-700 block mb-1">প্রাথমিক স্টক *</label>
-                  <input
-                    type="number"
-                    required
-                    placeholder="20"
-                    value={pStock}
-                    onChange={(e) => setPStock(e.target.value)}
-                    className="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-lg focus:bg-white focus:border-indigo-500 focus:outline-hidden font-mono"
-                  />
-                </div>
-                <div>
-                  <label className="font-semibold text-slate-700 block mb-1">সতর্কবার্তা লেভেল</label>
-                  <input
-                    type="number"
-                    placeholder="5"
-                    value={pMinStock}
-                    onChange={(e) => setPMinStock(e.target.value)}
-                    className="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-lg focus:bg-white focus:border-indigo-500 focus:outline-hidden font-mono"
-                  />
+                  <p className="text-[10px] text-slate-500 mt-0.5">স্ক্যানার দিয়ে স্ক্যান করুন</p>
                 </div>
               </div>
 
