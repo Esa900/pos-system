@@ -20,6 +20,7 @@ import {
   DollarSign,
   Copy,
 } from 'lucide-react';
+import { SHOP_INFO } from '../../data/initialData';
 
 interface Props {
   customers: Customer[];
@@ -596,14 +597,14 @@ export const BakiKhataView: React.FC<Props> = ({
               </p>
 
               <div className="p-3 bg-slate-50 border border-slate-200 rounded-lg text-xs leading-relaxed text-slate-800 font-sans">
-                {`সম্মানিত গ্রাহক ${smsCustomer.name}, মেসার্স রূপরং বস্ত্রালয়-এ আপনার বকেয়া বাকি রয়েছে ৳ ${smsCustomer.totalDue.toLocaleString('en-US')} টাকা। অনুগ্রহ করে বকেয়া পরিশোধ করার জন্য অনুরোধ করা হলো। যোগাযোগের নম্বর: ০১৭০০-১১২২৩৩। ধন্যবাদ।`}
+                {`সম্মানিত গ্রাহক ${smsCustomer.name}, ${SHOP_INFO.name}-এ আপনার বকেয়া বাকি রয়েছে ৳ ${smsCustomer.totalDue.toLocaleString('en-US')} টাকা। অনুগ্রহ করে বকেয়া পরিশোধ করার জন্য অনুরোধ করা হলো। যোগাযোগের নম্বর: ${SHOP_INFO.phoneBangla}। ধন্যবাদ।`}
               </div>
 
               <div className="pt-2 flex gap-2">
                 <button
                   type="button"
                   onClick={() => {
-                    const text = `সম্মানিত গ্রাহক ${smsCustomer.name}, মেসার্স রূপরং বস্ত্রালয়-এ আপনার বকেয়া বাকি রয়েছে ৳ ${smsCustomer.totalDue.toLocaleString('en-US')} টাকা। অনুগ্রহ করে বকেয়া পরিশোধ করার জন্য অনুরোধ করা হলো। যোগাযোগের নম্বর: ০১৭০০-১১২২৩৩। ধন্যবাদ।`;
+                    const text = `সম্মানিত গ্রাহক ${smsCustomer.name}, ${SHOP_INFO.name}-এ আপনার বকেয়া বাকি রয়েছে ৳ ${smsCustomer.totalDue.toLocaleString('en-US')} টাকা। অনুগ্রহ করে বকেয়া পরিশোধ করার জন্য অনুরোধ করা হলো। যোগাযোগের নম্বর: ${SHOP_INFO.phoneBangla}। ধন্যবাদ।`;
                     navigator.clipboard.writeText(text);
                     setSmsCopied(true);
                     setTimeout(() => setSmsCopied(false), 2000);

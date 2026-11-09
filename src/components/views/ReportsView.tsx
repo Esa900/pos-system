@@ -15,6 +15,7 @@ import {
   Receipt,
   Wallet,
 } from 'lucide-react';
+import { SHOP_INFO } from '../../data/initialData';
 
 interface Props {
   sales: SaleInvoice[];
@@ -192,7 +193,7 @@ export const ReportsView: React.FC<Props> = ({
         <div className="border-b border-slate-100 pb-3 flex items-center justify-between">
           <div>
             <h3 className="font-bold text-slate-900 text-base">লাভ-ক্ষতি বিবরণী (Income Statement)</h3>
-            <p className="text-xs text-slate-500">KHAN MANAGEMENT - নির্বাচিত সময়কাল</p>
+            <p className="text-xs text-slate-500">{SHOP_INFO.name} - নির্বাচিত সময়কাল</p>
           </div>
           <span className="text-xs font-mono px-2 py-0.5 rounded bg-indigo-50 text-indigo-700 font-medium">
             মোট বিক্রি চালান: {toBanglaNumber(filteredSales.length)} টি

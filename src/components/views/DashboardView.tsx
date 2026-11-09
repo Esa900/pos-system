@@ -15,6 +15,7 @@ import {
   ChevronRight,
   ExternalLink,
 } from 'lucide-react';
+import { SHOP_INFO } from '../../data/initialData';
 
 interface Props {
   sales: SaleInvoice[];
@@ -74,7 +75,7 @@ export const DashboardView: React.FC<Props> = ({
   const cashExpensesTotal = expenses
     .filter((e) => isToday(e.date) && e.paymentMethod === 'নগদ')
     .reduce((acc, e) => acc + e.amount, 0);
-  const cashInHand = Math.max(0, 73735 + cashSalesTotal - cashExpensesTotal);
+  const cashInHand = Math.max(0, cashSalesTotal - cashExpensesTotal);
 
   // Low stock products count
   const lowStockProducts = products.filter((p) => p.stockQty <= p.minStockLevel);
@@ -98,22 +99,22 @@ export const DashboardView: React.FC<Props> = ({
 
   const maxCategoryTotal = Math.max(...categoryList.map((c) => c.total), 1);
 
-  // Weekly sales trend
+  // Weekly sales trend (dynamic from real sales, zero if no sales recorded yet)
   const weeklyTrend = [
-    { day: 'সোম', date: '০২ নব.', amount: 14200, profit: 4600 },
-    { day: 'মঙ্গল', date: '০৩ নব.', amount: 18500, profit: 5900 },
-    { day: 'বুধ', date: '০৪ নব.', amount: 12900, profit: 4100 },
-    { day: 'বৃহঃ', date: '০৫ নব.', amount: 21400, profit: 7100 },
-    { day: 'শুক্র', date: '০৬ নব.', amount: 32600, profit: 10800 },
-    { day: 'শনি', date: '০৭ নব.', amount: 26800, profit: 8900 },
+    { day: 'সোম', date: '০২ নব.', amount: 0, profit: 0 },
+    { day: 'মঙ্গল', date: '০৩ নব.', amount: 0, profit: 0 },
+    { day: 'বুধ', date: '০৪ নব.', amount: 0, profit: 0 },
+    { day: 'বৃহঃ', date: '০৫ নব.', amount: 0, profit: 0 },
+    { day: 'শুক্র', date: '০৬ নব.', amount: 0, profit: 0 },
+    { day: 'শনি', date: '০৭ নব.', amount: 0, profit: 0 },
     {
-      day: 'রবি (আজ)',
-      date: '০৮ নব.',
-      amount: todaySaleTotal > 0 ? todaySaleTotal : 15800,
-      profit: todayNetProfit > 0 ? todayNetProfit : 5200,
+      day: 'আজ',
+      date: 'আজকের বিক্রি',
+      amount: todaySaleTotal,
+      profit: todayNetProfit,
     },
   ];
-  const maxTrend = Math.max(...weeklyTrend.map((t) => t.amount));
+  const maxTrend = Math.max(...weeklyTrend.map((t) => t.amount), 1);
 
   return (
     <div className="space-y-6">
@@ -122,13 +123,13 @@ export const DashboardView: React.FC<Props> = ({
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 bg-gradient-to-r from-emerald-900 via-[#00875a] to-teal-900 rounded-xl p-5 text-white shadow-sm">
         <div>
           <div className="flex items-center gap-2">
-            <h2 className="text-xl font-bold tracking-tight">KHAN MANAGEMENT ড্যাশবোর্ড</h2>
+            <h2 className="text-xl font-bold tracking-tight">{SHOP_INFO.name} ড্যাশবোর্ড</h2>
             <span className="text-[11px] px-2 py-0.5 rounded-full bg-emerald-400/20 text-emerald-200 border border-emerald-400/30 font-medium">
               লাইভ কাউন্টার
             </span>
           </div>
           <p className="text-xs text-emerald-100 mt-1">
-            আজকের দিনলিপি, ১-ক্লিক মেমো ও বিক্রয় ট্র্যাকিং
+            {SHOP_INFO.slogan} • {SHOP_INFO.address}
           </p>
         </div>
         <div className="flex items-center gap-2.5">

@@ -26,9 +26,9 @@ export async function downloadProjectZip(): Promise<void> {
   }
 
   // Add a comprehensive README.md file
-  const readmeContent = `# KHAN MANAGEMENT - Point of Sale (POS), MFS & Inventory System
+  const readmeContent = `# হিযবুল্লাহ লেডিস কর্নার - Point of Sale (POS), MFS & Inventory System
 
-A modern Point of Sale (POS), MFS Mobile Banking Ledger, Inventory, and Customer Ledger System built with React, Vite, and Tailwind CSS.
+হিযবুল্লাহ লেডিস কর্নার (৩৯/ বি, তিন নং গেইট, হাসান মার্কেট, বন্দর বাজার, সিলেট - ৩১০০। মোবাইল: ০১৯৭১৬৬৭৫৪৭) এর জন্য তৈরি আধুনিক পয়েন্ট অব সেল (POS), ইনভেন্টরি, বারকোড এবং বাকি খাতা সিস্টেম।
 
 ## 🚀 Quick Start (Local Setup)
 

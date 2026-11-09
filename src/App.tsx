@@ -25,6 +25,7 @@ import {
   INITIAL_PURCHASES,
   INITIAL_MFS_BALANCES,
   INITIAL_MFS_TRANSACTIONS,
+  SHOP_INFO,
 } from './data/initialData';
 import { Sidebar } from './components/Sidebar';
 import { TopHeader } from './components/TopHeader';
@@ -47,10 +48,10 @@ export default function App() {
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
   const [soundEnabled, setSoundEnabled] = useState(true);
 
-  // Application Data with LocalStorage Persistence
+  // Application Data with LocalStorage Persistence (Using clean keys for Hizbullah Ladies Corner)
   const [products, setProducts] = useState<Product[]>(() => {
     try {
-      const saved = localStorage.getItem('mahim_pos_products');
+      const saved = localStorage.getItem('hlc_pos_products');
       return saved ? JSON.parse(saved) : INITIAL_PRODUCTS;
     } catch {
       return INITIAL_PRODUCTS;
@@ -59,7 +60,7 @@ export default function App() {
 
   const [customers, setCustomers] = useState<Customer[]>(() => {
     try {
-      const saved = localStorage.getItem('mahim_pos_customers');
+      const saved = localStorage.getItem('hlc_pos_customers');
       return saved ? JSON.parse(saved) : INITIAL_CUSTOMERS;
     } catch {
       return INITIAL_CUSTOMERS;
@@ -68,7 +69,7 @@ export default function App() {
 
   const [sales, setSales] = useState<SaleInvoice[]>(() => {
     try {
-      const saved = localStorage.getItem('mahim_pos_sales');
+      const saved = localStorage.getItem('hlc_pos_sales');
       return saved ? JSON.parse(saved) : INITIAL_SALES;
     } catch {
       return INITIAL_SALES;
@@ -77,7 +78,7 @@ export default function App() {
 
   const [expenses, setExpenses] = useState<Expense[]>(() => {
     try {
-      const saved = localStorage.getItem('mahim_pos_expenses');
+      const saved = localStorage.getItem('hlc_pos_expenses');
       return saved ? JSON.parse(saved) : INITIAL_EXPENSES;
     } catch {
       return INITIAL_EXPENSES;
@@ -86,7 +87,7 @@ export default function App() {
 
   const [suppliers, setSuppliers] = useState<Supplier[]>(() => {
     try {
-      const saved = localStorage.getItem('mahim_pos_suppliers');
+      const saved = localStorage.getItem('hlc_pos_suppliers');
       return saved ? JSON.parse(saved) : INITIAL_SUPPLIERS;
     } catch {
       return INITIAL_SUPPLIERS;
@@ -95,7 +96,7 @@ export default function App() {
 
   const [purchases, setPurchases] = useState<PurchaseInvoice[]>(() => {
     try {
-      const saved = localStorage.getItem('mahim_pos_purchases');
+      const saved = localStorage.getItem('hlc_pos_purchases');
       return saved ? JSON.parse(saved) : INITIAL_PURCHASES;
     } catch {
       return INITIAL_PURCHASES;
@@ -105,7 +106,7 @@ export default function App() {
   // MFS Data
   const [mfsBalances, setMfsBalances] = useState<MfsBalances>(() => {
     try {
-      const saved = localStorage.getItem('mahim_pos_mfs_balances');
+      const saved = localStorage.getItem('hlc_pos_mfs_balances');
       return saved ? JSON.parse(saved) : INITIAL_MFS_BALANCES;
     } catch {
       return INITIAL_MFS_BALANCES;
@@ -114,7 +115,7 @@ export default function App() {
 
   const [mfsTransactions, setMfsTransactions] = useState<MfsTransaction[]>(() => {
     try {
-      const saved = localStorage.getItem('mahim_pos_mfs_trx');
+      const saved = localStorage.getItem('hlc_pos_mfs_trx');
       return saved ? JSON.parse(saved) : INITIAL_MFS_TRANSACTIONS;
     } catch {
       return INITIAL_MFS_TRANSACTIONS;
@@ -125,38 +126,84 @@ export default function App() {
   const [receiptInvoice, setReceiptInvoice] = useState<SaleInvoice | null>(null);
   const [barcodeSelectedProduct, setBarcodeSelectedProduct] = useState<Product | null>(null);
 
+  // Clear any legacy demo data from previous sessions
+  useEffect(() => {
+    const legacyKeys = [
+      'mahim_pos_products',
+      'mahim_pos_customers',
+      'mahim_pos_sales',
+      'mahim_pos_expenses',
+      'mahim_pos_suppliers',
+      'mahim_pos_purchases',
+      'mahim_pos_mfs_balances',
+      'mahim_pos_mfs_trx',
+    ];
+    legacyKeys.forEach((key) => localStorage.removeItem(key));
+  }, []);
+
   // LocalStorage sync
   useEffect(() => {
-    localStorage.setItem('mahim_pos_products', JSON.stringify(products));
+    localStorage.setItem('hlc_pos_products', JSON.stringify(products));
   }, [products]);
 
   useEffect(() => {
-    localStorage.setItem('mahim_pos_customers', JSON.stringify(customers));
+    localStorage.setItem('hlc_pos_customers', JSON.stringify(customers));
   }, [customers]);
 
   useEffect(() => {
-    localStorage.setItem('mahim_pos_sales', JSON.stringify(sales));
+    localStorage.setItem('hlc_pos_sales', JSON.stringify(sales));
   }, [sales]);
 
   useEffect(() => {
-    localStorage.setItem('mahim_pos_expenses', JSON.stringify(expenses));
+    localStorage.setItem('hlc_pos_expenses', JSON.stringify(expenses));
   }, [expenses]);
 
   useEffect(() => {
-    localStorage.setItem('mahim_pos_suppliers', JSON.stringify(suppliers));
+    localStorage.setItem('hlc_pos_suppliers', JSON.stringify(suppliers));
   }, [suppliers]);
 
   useEffect(() => {
-    localStorage.setItem('mahim_pos_purchases', JSON.stringify(purchases));
+    localStorage.setItem('hlc_pos_purchases', JSON.stringify(purchases));
   }, [purchases]);
 
   useEffect(() => {
-    localStorage.setItem('mahim_pos_mfs_balances', JSON.stringify(mfsBalances));
+    localStorage.setItem('hlc_pos_mfs_balances', JSON.stringify(mfsBalances));
   }, [mfsBalances]);
 
   useEffect(() => {
-    localStorage.setItem('mahim_pos_mfs_trx', JSON.stringify(mfsTransactions));
+    localStorage.setItem('hlc_pos_mfs_trx', JSON.stringify(mfsTransactions));
   }, [mfsTransactions]);
+
+  // Complete data reset handler
+  const handleClearAllData = () => {
+    const keys = [
+      'hlc_pos_products',
+      'hlc_pos_customers',
+      'hlc_pos_sales',
+      'hlc_pos_expenses',
+      'hlc_pos_suppliers',
+      'hlc_pos_purchases',
+      'hlc_pos_mfs_balances',
+      'hlc_pos_mfs_trx',
+      'mahim_pos_products',
+      'mahim_pos_customers',
+      'mahim_pos_sales',
+      'mahim_pos_expenses',
+      'mahim_pos_suppliers',
+      'mahim_pos_purchases',
+      'mahim_pos_mfs_balances',
+      'mahim_pos_mfs_trx',
+    ];
+    keys.forEach((k) => localStorage.removeItem(k));
+    setProducts([]);
+    setCustomers([]);
+    setSales([]);
+    setExpenses([]);
+    setSuppliers([]);
+    setPurchases([]);
+    setMfsBalances({ bkash: 0, nagad: 0, rocket: 0 });
+    setMfsTransactions([]);
+  };
 
   // SALE COMPLETION HANDLER
   const handleCompleteSale = (invoice: SaleInvoice) => {
@@ -344,18 +391,19 @@ export default function App() {
     .filter((e) => e.paymentMethod === 'নগদ')
     .reduce((acc, e) => acc + e.amount, 0);
 
-  const cashInHand = Math.max(0, 73735 + todayCashSales - todayCashExpenses);
+  const cashInHand = Math.max(0, todayCashSales - todayCashExpenses);
 
   return (
     <div className="min-h-screen bg-[#ecf3f4] flex flex-col antialiased selection:bg-[#00875a] selection:text-white">
       
-      {/* Top Header Banner ("KHAN MANAGEMENT") */}
+      {/* Top Header Banner ("হিযবুল্লাহ লেডিস কর্নার") */}
       <TopHeader
         onToggleMobileMenu={() => setIsMobileMenuOpen(!isMobileMenuOpen)}
         soundEnabled={soundEnabled}
         onToggleSound={() => setSoundEnabled(!soundEnabled)}
-        shopName="KHAN MANAGEMENT"
-        subTitle="Point of Sale Management System"
+        shopName={SHOP_INFO.name}
+        subTitle={`${SHOP_INFO.slogan} • ${SHOP_INFO.address}`}
+        onClearAllData={handleClearAllData}
       />
 
       {/* Main Container: Sidebar + Content */}

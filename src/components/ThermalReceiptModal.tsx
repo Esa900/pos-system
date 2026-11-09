@@ -1,7 +1,8 @@
 import React, { useEffect } from 'react';
 import { SaleInvoice } from '../types';
-import { formatBDT, toBanglaNumber, generateBarcodeBars } from '../utils/bengaliUtils';
-import { Printer, X, CheckCircle, ShoppingBag } from 'lucide-react';
+import { generateBarcodeBars } from '../utils/bengaliUtils';
+import { Printer, X, CheckCircle, Phone, MapPin, Mail, Globe } from 'lucide-react';
+import { SHOP_INFO } from '../data/initialData';
 
 interface Props {
   invoice: SaleInvoice | null;
@@ -38,7 +39,7 @@ export const ThermalReceiptModal: React.FC<Props> = ({ invoice, onClose }) => {
         <div className="flex items-center justify-between px-5 py-3.5 bg-slate-900 text-white print:hidden">
           <div className="flex items-center gap-2">
             <CheckCircle className="w-5 h-5 text-emerald-400" />
-            <span className="font-semibold text-sm">মেমো তৈরি সম্পন্ন!</span>
+            <span className="font-semibold text-sm">ক্যাশ মেমো তৈরি সম্পন্ন!</span>
           </div>
           <div className="flex items-center gap-2">
             <button
@@ -58,27 +59,59 @@ export const ThermalReceiptModal: React.FC<Props> = ({ invoice, onClose }) => {
           </div>
         </div>
 
-        {/* Clean Printable Thermal Receipt Container */}
+        {/* Clean Printable Thermal Receipt Container (80mm standard) */}
         <div 
           id="printable-receipt" 
           className="p-6 bg-white text-slate-800 font-sans text-xs leading-relaxed max-h-[85vh] overflow-y-auto"
         >
           {/* Header */}
-          <div className="text-center border-b border-dashed border-slate-300 pb-3 mb-3">
-            <div className="flex items-center justify-center gap-1.5 mb-1">
-              <ShoppingBag className="w-4 h-4 text-emerald-700" />
-              <h2 className="text-base font-bold text-slate-900 tracking-tight">KHAN MANAGEMENT</h2>
+          <div className="text-center border-b border-dashed border-slate-400 pb-3 mb-3">
+            {/* Logo / Shop Emblem */}
+            <div className="flex justify-center mb-1.5">
+              <img 
+                src={SHOP_INFO.logoUrl} 
+                alt={SHOP_INFO.name} 
+                className="w-16 h-16 rounded-full object-cover border-2 border-amber-600/60 shadow-xs"
+              />
             </div>
-            <p className="text-[11px] text-slate-600 font-medium">Point of Sale & Inventory Management System</p>
-            <p className="text-[10px] text-slate-500 mt-0.5">মেইন রোড, বাজার পয়েন্ট, ঢাকা</p>
-            <p className="text-[10px] text-slate-500 font-mono">মোবাইল: ০১৭০০-১১২২৩৩, ০১৮০০-৪৪৫৫৬৬</p>
+
+            <h2 className="text-lg font-extrabold text-slate-900 tracking-tight leading-tight">
+              {SHOP_INFO.name}
+            </h2>
+            <p className="text-[11px] font-semibold text-emerald-800 mt-0.5">
+              {SHOP_INFO.slogan}
+            </p>
+            <p className="text-[10px] text-slate-700 font-medium mt-0.5">
+              প্রোপ্রাইটর: {SHOP_INFO.proprietor}
+            </p>
+            
+            {/* Address */}
+            <div className="text-[10px] text-slate-600 mt-1 flex items-center justify-center gap-1 leading-normal">
+              <MapPin className="w-3 h-3 text-slate-500 shrink-0 inline" />
+              <span>{SHOP_INFO.address}</span>
+            </div>
+
+            {/* Contact details */}
+            <div className="text-[10px] text-slate-700 font-mono mt-1 space-y-0.5">
+              <div className="flex items-center justify-center gap-1 font-bold">
+                <Phone className="w-3 h-3 text-emerald-700 shrink-0 inline" />
+                <span>মোবাইল: {SHOP_INFO.phoneBangla} ({SHOP_INFO.phone})</span>
+              </div>
+              <div className="text-[9px] text-slate-500 flex items-center justify-center gap-1 font-sans">
+                <Mail className="w-2.5 h-2.5 text-slate-400 inline" />
+                <span>{SHOP_INFO.email}</span>
+                <span>•</span>
+                <Globe className="w-2.5 h-2.5 text-slate-400 inline" />
+                <span>{SHOP_INFO.website}</span>
+              </div>
+            </div>
           </div>
 
           {/* Invoice Meta */}
           <div className="text-[11px] space-y-1 border-b border-dashed border-slate-300 pb-2.5 mb-2.5">
             <div className="flex justify-between">
-              <span className="text-slate-500">ইনভয়েস নং:</span>
-              <span className="font-mono font-semibold text-slate-900">{invoice.invoiceNo}</span>
+              <span className="text-slate-500">মেমো / ইনভয়েস নং:</span>
+              <span className="font-mono font-bold text-slate-900">{invoice.invoiceNo}</span>
             </div>
             <div className="flex justify-between">
               <span className="text-slate-500">তারিখ ও সময়:</span>
@@ -96,13 +129,13 @@ export const ThermalReceiptModal: React.FC<Props> = ({ invoice, onClose }) => {
             )}
             <div className="flex justify-between">
               <span className="text-slate-500">পেমেন্ট মোড:</span>
-              <span className="font-medium text-emerald-800 font-mono text-[10px]">
+              <span className="font-semibold text-emerald-800 font-mono text-[10px]">
                 {invoice.paymentMethod}
               </span>
             </div>
           </div>
 
-          {/* Items Table - Clean 3 columns (বিবরণ | পরিমাণ | মোট) - NO "দর" column, NO "সাইজ" column as requested */}
+          {/* Items Table - Clean 3 columns (বিবরণ | পরিমাণ | মোট) */}
           <div className="mb-3">
             <table className="w-full text-left text-[11px]">
               <thead>
@@ -130,7 +163,7 @@ export const ThermalReceiptModal: React.FC<Props> = ({ invoice, onClose }) => {
             </table>
           </div>
 
-          {/* Clean Total Bill - NO "পরিশোধিত টাকা: ৳ ১০ / বকেয়া বাকি: ৳ ০" lines as requested in screenshot 3 */}
+          {/* Total Bill Section */}
           <div className="border-t border-slate-300 pt-2 space-y-1.5 text-[11px]">
             {invoice.discountAmount > 0 && (
               <>
@@ -148,6 +181,11 @@ export const ThermalReceiptModal: React.FC<Props> = ({ invoice, onClose }) => {
             <div className="flex justify-between text-sm font-bold text-slate-900 border-t border-dashed border-slate-300 pt-1.5">
               <span>সর্বমোট প্রদেয়:</span>
               <span className="font-mono text-base text-emerald-800">৳ {invoice.netPayable.toFixed(2)}</span>
+            </div>
+
+            <div className="flex justify-between text-[11px] text-slate-600">
+              <span>পরিশোধিত টাকা:</span>
+              <span className="font-mono font-semibold">৳ {invoice.paidAmount.toFixed(2)}</span>
             </div>
 
             {/* Only show baki alert if there is actual positive remaining due */}
@@ -176,9 +214,17 @@ export const ThermalReceiptModal: React.FC<Props> = ({ invoice, onClose }) => {
             <p className="font-mono text-[9px] tracking-widest text-slate-600 uppercase">{invoice.invoiceNo}</p>
           </div>
 
-          {/* Clean Footer - NO "★ বিক্রিত পণ্য ৭ দিনের মধ্যে মেমোসহ পরিবর্তনের সুযোগ রয়েছে ★" as requested in screenshot 2 */}
-          <div className="mt-3 text-center text-[10px] text-slate-500 border-t border-dashed border-slate-200 pt-2">
-            <p className="font-bold text-emerald-800 text-xs">ধন্যবাদ! আবার আসবেন।</p>
+          {/* Footer with return policy under "ধন্যবাদ! আবার আসবেন।" */}
+          <div className="mt-3 text-center text-slate-600 border-t border-dashed border-slate-300 pt-2.5 space-y-1">
+            <p className="font-bold text-emerald-800 text-xs">
+              ধন্যবাদ! আবার আসবেন।
+            </p>
+            <p className="text-[10px] font-semibold text-slate-800 bg-slate-100 py-1 px-2 rounded border border-slate-200 inline-block">
+              ★ {SHOP_INFO.returnPolicy} ★
+            </p>
+            <p className="text-[9px] text-slate-400 mt-0.5">
+              ফেসবুক পেজ: {SHOP_INFO.facebook}
+            </p>
           </div>
         </div>
 

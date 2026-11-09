@@ -1,7 +1,8 @@
 import React, { useState } from 'react';
 import { Product } from '../../types';
 import { formatBDT, toBanglaNumber, generateBarcodeBars } from '../../utils/bengaliUtils';
-import { Barcode, Printer, Tag, Sparkles, Sliders, CheckSquare, Square } from 'lucide-react';
+import { Barcode, Printer, Tag, Sparkles, Sliders, CheckSquare, Square, PackagePlus } from 'lucide-react';
+import { SHOP_INFO } from '../../data/initialData';
 
 interface Props {
   products: Product[];
@@ -18,7 +19,18 @@ export const BarcodeGeneratorView: React.FC<Props> = ({ products, initialSelecte
   const [printCopies, setPrintCopies] = useState<number>(6);
   const [customPrice, setCustomPrice] = useState<string>('');
 
-  const product = products.find((p) => p.id === selectedProductId) || products[0];
+  const product = products.find((p) => p.id === selectedProductId) || products[0] || {
+    id: 'placeholder',
+    barcode: '8901245000',
+    name: 'নতুন পণ্য (ডেমো লেবেল)',
+    category: 'অন্যান্য',
+    sizes: ['Free'],
+    availableColors: ['স্ট্যান্ডার্ড'],
+    buyingPrice: 0,
+    sellingPrice: 0,
+    stockQty: 0,
+    minStockLevel: 0,
+  };
 
   // Sync size/color when product changes
   const handleProductChange = (id: string) => {
@@ -31,7 +43,7 @@ export const BarcodeGeneratorView: React.FC<Props> = ({ products, initialSelecte
     }
   };
 
-  const barcodeBars = generateBarcodeBars(product?.barcode || '8901245001');
+  const barcodeBars = generateBarcodeBars(product.barcode || '8901245000');
   const activePrice = customPrice !== '' ? parseFloat(customPrice) || product.sellingPrice : product.sellingPrice;
 
   const handlePrint = () => {
@@ -223,8 +235,8 @@ export const BarcodeGeneratorView: React.FC<Props> = ({ products, initialSelecte
             >
               {/* Header */}
               <div className="border-b border-slate-800 pb-1 mb-1.5">
-                <p className="font-bold text-xs tracking-tight text-slate-900">KHAN MANAGEMENT</p>
-                <p className="text-[9px] text-slate-500">Point of Sale System</p>
+                <p className="font-bold text-xs tracking-tight text-slate-900">{SHOP_INFO.name}</p>
+                <p className="text-[9px] text-slate-500">{SHOP_INFO.slogan}</p>
               </div>
 
               {/* Title & Size */}
@@ -278,8 +290,8 @@ export const BarcodeGeneratorView: React.FC<Props> = ({ products, initialSelecte
               className="bg-white rounded-md border-2 border-slate-800 p-2.5 text-center text-slate-900 page-break-inside-avoid shadow-2xs"
             >
               <div className="border-b border-slate-800 pb-0.5 mb-1">
-                <p className="font-bold text-[11px] text-slate-900">KHAN MANAGEMENT</p>
-                <p className="text-[8px] text-slate-500">Point of Sale System</p>
+                <p className="font-bold text-[11px] text-slate-900">{SHOP_INFO.name}</p>
+                <p className="text-[8px] text-slate-500">{SHOP_INFO.slogan}</p>
               </div>
 
               <div className="font-semibold text-[11px] text-slate-900 leading-tight truncate">

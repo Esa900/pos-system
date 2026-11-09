@@ -1,6 +1,6 @@
 {
-  "name": "Bostraloy POS & Baki Khata",
-  "description": "Modern Point of Sale (POS), Inventory, and Customer Ledger (বাকি খাতা) Management System for clothing stores.",
+  "name": "Mahim Telecom and Electric Point",
+  "description": "Point of Sale (POS), MFS & Inventory Management System for retail telecom and electronics.",
   "requestFramePermissions": [],
   "majorCapabilities": [
     "MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"

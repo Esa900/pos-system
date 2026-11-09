@@ -27,41 +27,7 @@ interface ServiceApplication {
   date: string;
 }
 
-const INITIAL_APPLICATIONS: ServiceApplication[] = [
-  {
-    id: 'app-1',
-    serviceType: 'অনলাইন জন্ম নিবন্ধন সংশোধন',
-    applicantName: 'মো: আব্দুল করিম',
-    phone: '01712-345678',
-    referenceNo: 'BRIS-2026-9812',
-    fee: 350,
-    cost: 100,
-    status: 'সম্পন্ন',
-    date: '08-11-2026',
-  },
-  {
-    id: 'app-2',
-    serviceType: 'পল্লী বিদ্যুৎ বিল পরিশোধ',
-    applicantName: 'হাজী শফিকুজ্জামান',
-    phone: '01819-876543',
-    referenceNo: 'BREB-450912',
-    fee: 1420,
-    cost: 1400,
-    status: 'সম্পন্ন',
-    date: '08-11-2026',
-  },
-  {
-    id: 'app-3',
-    serviceType: 'জাতীয় পরিচয়পত্র (NID) রি-ইস্যু',
-    applicantName: 'নাসরিন সুলতানা',
-    phone: '01911-223344',
-    referenceNo: 'NID-992381',
-    fee: 400,
-    cost: 230,
-    status: 'প্রক্রিয়াধীন',
-    date: '07-11-2026',
-  },
-];
+const INITIAL_APPLICATIONS: ServiceApplication[] = [];
 
 export const OnlineServicesView: React.FC = () => {
   const [applications, setApplications] = useState<ServiceApplication[]>(INITIAL_APPLICATIONS);
