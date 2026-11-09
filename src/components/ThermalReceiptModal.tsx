@@ -12,7 +12,7 @@ export const ThermalReceiptModal: React.FC<Props> = ({ invoice, onClose }) => {
   if (!invoice) return null;
 
   useEffect(() => {
-    // 1-Click memo auto-print
+    // 1-Click memo auto-print dialog
     const timer = setTimeout(() => {
       try {
         window.print();
@@ -37,12 +37,12 @@ export const ThermalReceiptModal: React.FC<Props> = ({ invoice, onClose }) => {
         <div className="flex items-center justify-between px-5 py-3.5 bg-slate-900 text-white print:hidden">
           <div className="flex items-center gap-2">
             <CheckCircle className="w-5 h-5 text-emerald-400" />
-            <span className="font-semibold text-sm">বিক্রি সফল হয়েছে!</span>
+            <span className="font-semibold text-sm">মেমো তৈরি সম্পন্ন!</span>
           </div>
           <div className="flex items-center gap-2">
             <button
               onClick={handlePrint}
-              className="flex items-center gap-1.5 px-3 py-1.5 bg-teal-600 hover:bg-teal-500 active:scale-95 text-white text-xs font-semibold rounded-md transition shadow-sm cursor-pointer"
+              className="flex items-center gap-1.5 px-3 py-1.5 bg-emerald-600 hover:bg-emerald-500 active:scale-95 text-white text-xs font-semibold rounded-md transition shadow-sm cursor-pointer"
             >
               <Printer className="w-3.5 h-3.5" />
               প্রিন্ট রসিদ
@@ -57,10 +57,10 @@ export const ThermalReceiptModal: React.FC<Props> = ({ invoice, onClose }) => {
           </div>
         </div>
 
-        {/* Printable Thermal Receipt Container */}
+        {/* Clean Printable Thermal Receipt Container */}
         <div 
           id="printable-receipt" 
-          className="p-6 bg-white text-slate-800 font-sans text-xs leading-relaxed max-h-[80vh] overflow-y-auto"
+          className="p-6 bg-white text-slate-800 font-sans text-xs leading-relaxed max-h-[85vh] overflow-y-auto"
         >
           {/* Header */}
           <div className="text-center border-b border-dashed border-slate-300 pb-3 mb-3">
@@ -81,7 +81,7 @@ export const ThermalReceiptModal: React.FC<Props> = ({ invoice, onClose }) => {
             </div>
             <div className="flex justify-between">
               <span className="text-slate-500">তারিখ ও সময়:</span>
-              <span>{invoice.date} | {invoice.time}</span>
+              <span className="font-mono">{invoice.date} | {invoice.time}</span>
             </div>
             <div className="flex justify-between">
               <span className="text-slate-500">ক্রেতার নাম:</span>
@@ -94,75 +94,60 @@ export const ThermalReceiptModal: React.FC<Props> = ({ invoice, onClose }) => {
               </div>
             )}
             <div className="flex justify-between">
-              <span className="text-slate-500">পরিশোধের ধরণ:</span>
-              <span className="font-medium text-teal-800 bg-teal-50 px-1.5 py-0.5 rounded text-[10px] border border-teal-200">
+              <span className="text-slate-500">পেমেন্ট মোড:</span>
+              <span className="font-medium text-emerald-800 font-mono text-[10px]">
                 {invoice.paymentMethod}
               </span>
             </div>
           </div>
 
-          {/* Items Table */}
+          {/* Items Table - Clean 3 columns (বিবরণ | পরিমাণ | মোট) - NO "দর" column, NO "সাইজ" column as requested */}
           <div className="mb-3">
             <table className="w-full text-left text-[11px]">
               <thead>
-                <tr className="border-b border-slate-300 text-slate-500 pb-1 font-semibold">
-                  <th className="py-1">বিবরণ</th>
-                  <th className="py-1 text-center">সাইজ</th>
+                <tr className="border-b border-slate-300 text-slate-600 pb-1 font-bold">
+                  <th className="py-1">বিবরণ / পণ্য</th>
                   <th className="py-1 text-center">পরিমাণ</th>
-                  <th className="py-1 text-right">দর</th>
                   <th className="py-1 text-right">মোট</th>
                 </tr>
               </thead>
               <tbody className="divide-y divide-dashed divide-slate-200">
                 {invoice.items.map((item, idx) => (
                   <tr key={idx} className="py-1.5">
-                    <td className="py-1 font-medium text-slate-900 max-w-[140px] truncate">
+                    <td className="py-1.5 font-medium text-slate-900">
                       {item.name}
-                      <span className="block text-[9px] text-slate-500">{item.color}</span>
                     </td>
-                    <td className="py-1 text-center font-mono text-slate-600 text-[10px]">{item.size}</td>
-                    <td className="py-1 text-center font-mono">{toBanglaNumber(item.qty)}</td>
-                    <td className="py-1 text-right font-mono text-slate-600">{toBanglaNumber(item.unitPrice)}</td>
-                    <td className="py-1 text-right font-mono font-semibold text-slate-900">{toBanglaNumber(item.subtotal)}</td>
+                    <td className="py-1.5 text-center font-mono font-bold text-slate-800">
+                      {item.qty}
+                    </td>
+                    <td className="py-1.5 text-right font-mono font-bold text-slate-900">
+                      ৳ {item.subtotal.toFixed(2)}
+                    </td>
                   </tr>
                 ))}
               </tbody>
             </table>
           </div>
 
-          {/* Calculations */}
-          <div className="border-t border-slate-300 pt-2 space-y-1 text-[11px]">
-            <div className="flex justify-between text-slate-600">
-              <span>মোট আইটেম / পিস:</span>
-              <span className="font-mono">{toBanglaNumber(invoice.totalQty)} টি</span>
-            </div>
-            <div className="flex justify-between text-slate-600">
-              <span>মোট মূল্য:</span>
-              <span className="font-mono font-medium">{formatBDT(invoice.subtotal)}</span>
-            </div>
+          {/* Clean Total Bill - NO "পরিশোধিত টাকা: ৳ ১০ / বকেয়া বাকি: ৳ ০" lines as requested in screenshot 3 */}
+          <div className="border-t border-slate-300 pt-2 space-y-1.5 text-[11px]">
             {invoice.discountAmount > 0 && (
               <div className="flex justify-between text-emerald-700">
                 <span>ছাড় / ডিসকাউন্ট:</span>
-                <span className="font-mono font-medium">- {formatBDT(invoice.discountAmount)}</span>
+                <span className="font-mono font-medium">- ৳ {invoice.discountAmount.toFixed(2)}</span>
               </div>
             )}
-            <div className="flex justify-between text-sm font-bold text-slate-900 border-t border-dashed border-slate-300 pt-1.5 my-1">
+
+            <div className="flex justify-between text-sm font-bold text-slate-900 border-t border-dashed border-slate-300 pt-1.5">
               <span>সর্বমোট প্রদেয়:</span>
-              <span className="font-mono text-teal-800">{formatBDT(invoice.netPayable)}</span>
+              <span className="font-mono text-base text-emerald-800">৳ {invoice.netPayable.toFixed(2)}</span>
             </div>
-            <div className="flex justify-between text-slate-700 font-medium">
-              <span>পরিশোধিত টাকা:</span>
-              <span className="font-mono text-emerald-700">{formatBDT(invoice.paidAmount)}</span>
-            </div>
-            {invoice.dueAmount > 0 ? (
-              <div className="flex justify-between text-red-600 font-bold bg-red-50 p-1 rounded border border-red-200">
+
+            {/* Only show baki alert if there is actual positive remaining due */}
+            {invoice.dueAmount > 0 && (
+              <div className="flex justify-between text-rose-600 font-bold bg-rose-50 p-1.5 rounded border border-rose-200 mt-1">
                 <span>বকেয়া বাকি:</span>
-                <span className="font-mono">{formatBDT(invoice.dueAmount)}</span>
-              </div>
-            ) : (
-              <div className="flex justify-between text-slate-500 text-[10px]">
-                <span>বকেয়া বাকি:</span>
-                <span className="font-mono">৳ ০ (পরিশোধিত)</span>
+                <span className="font-mono">৳ {invoice.dueAmount.toFixed(2)}</span>
               </div>
             )}
           </div>
@@ -184,11 +169,9 @@ export const ThermalReceiptModal: React.FC<Props> = ({ invoice, onClose }) => {
             <p className="font-mono text-[9px] tracking-widest text-slate-600 uppercase">{invoice.invoiceNo}</p>
           </div>
 
-          {/* Shop Policy & Footer */}
-          <div className="mt-3 text-center text-[10px] text-slate-500 space-y-0.5 border-t border-dashed border-slate-200 pt-2">
-            <p className="font-medium text-slate-700">★ বিক্রিত পণ্য ৭ দিনের মধ্যে মেমোসহ পরিবর্তনের সুযোগ রয়েছে ★</p>
-            <p>অনুগ্রহ করে ব্যবহৃত বা ধোয়া পণ্য ফেরত নিয়ে আসবেন না</p>
-            <p className="font-bold text-teal-800 text-xs mt-1">ধন্যবাদ! আবার আসবেন।</p>
+          {/* Clean Footer - NO "★ বিক্রিত পণ্য ৭ দিনের মধ্যে মেমোসহ পরিবর্তনের সুযোগ রয়েছে ★" as requested in screenshot 2 */}
+          <div className="mt-3 text-center text-[10px] text-slate-500 border-t border-dashed border-slate-200 pt-2">
+            <p className="font-bold text-emerald-800 text-xs">ধন্যবাদ! আবার আসবেন।</p>
           </div>
         </div>
 
@@ -204,7 +187,7 @@ export const ThermalReceiptModal: React.FC<Props> = ({ invoice, onClose }) => {
             </button>
             <button
               onClick={handlePrint}
-              className="flex items-center gap-1.5 px-4 py-2 bg-indigo-600 hover:bg-indigo-700 active:scale-95 text-white text-xs font-semibold rounded-md transition shadow-xs cursor-pointer"
+              className="flex items-center gap-1.5 px-4 py-2 bg-emerald-600 hover:bg-emerald-700 active:scale-95 text-white text-xs font-semibold rounded-md transition shadow-xs cursor-pointer"
             >
               <Printer className="w-3.5 h-3.5" />
               রসিদ প্রিন্ট করুন
