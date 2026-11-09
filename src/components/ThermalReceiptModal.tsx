@@ -9,9 +9,8 @@ interface Props {
 }
 
 export const ThermalReceiptModal: React.FC<Props> = ({ invoice, onClose }) => {
-  if (!invoice) return null;
-
   useEffect(() => {
+    if (!invoice) return;
     // 1-Click memo auto-print dialog
     const timer = setTimeout(() => {
       try {
@@ -22,6 +21,8 @@ export const ThermalReceiptModal: React.FC<Props> = ({ invoice, onClose }) => {
     }, 350);
     return () => clearTimeout(timer);
   }, [invoice?.id]);
+
+  if (!invoice) return null;
 
   const handlePrint = () => {
     window.print();
