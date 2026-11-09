@@ -1,0 +1,8 @@
+{
+  "name": "Bostraloy POS & Baki Khata",
+  "description": "Modern Point of Sale (POS), Inventory, and Customer Ledger (বাকি খাতা) Management System for clothing stores.",
+  "requestFramePermissions": [],
+  "majorCapabilities": [
+    "MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"
+  ]
+}
